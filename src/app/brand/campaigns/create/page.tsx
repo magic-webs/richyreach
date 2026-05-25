@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useMockAuth } from "../../../layout-shell";
+import Link from "next/link";
 import { api } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -167,7 +168,7 @@ export default function CreateCampaignPage() {
                     <Label htmlFor="type" className="text-slate-300 text-xs font-bold uppercase">
                       Content Format
                     </Label>
-                    <Select value={campaignType} onValueChange={setCampaignType}>
+                    <Select value={campaignType} onValueChange={(val) => val && setCampaignType(val)}>
                       <SelectTrigger className="bg-slate-950/60 border-slate-800/80 text-white rounded-xl">
                         <SelectValue placeholder="Select Type" />
                       </SelectTrigger>
@@ -183,7 +184,7 @@ export default function CreateCampaignPage() {
                     <Label htmlFor="tier" className="text-slate-300 text-xs font-bold uppercase">
                       Target Creator Tier
                     </Label>
-                    <Select value={influencerTier} onValueChange={setInfluencerTier}>
+                    <Select value={influencerTier} onValueChange={(val) => val && setInfluencerTier(val)}>
                       <SelectTrigger className="bg-slate-950/60 border-slate-800/80 text-white rounded-xl">
                         <SelectValue placeholder="Select Creator Tier" />
                       </SelectTrigger>

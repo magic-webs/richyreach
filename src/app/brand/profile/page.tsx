@@ -256,7 +256,7 @@ export default function BrandProfilePage() {
                     <Label htmlFor="category" className="text-slate-300 text-xs font-bold uppercase">
                       Company Category
                     </Label>
-                    <Select value={category} onValueChange={setCategory}>
+                    <Select value={category} onValueChange={(val) => val && setCategory(val)}>
                       <SelectTrigger className="bg-slate-950/60 border-slate-800/80 text-white rounded-xl">
                         <SelectValue placeholder="Select Category" />
                       </SelectTrigger>

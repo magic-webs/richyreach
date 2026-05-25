@@ -267,7 +267,7 @@ export default function InfluencerProfilePage() {
                     <Label htmlFor="niche" className="text-slate-300 text-xs font-bold uppercase">
                       Content Niche
                     </Label>
-                    <Select value={niche} onValueChange={setNiche}>
+                    <Select value={niche} onValueChange={(val) => val && setNiche(val)}>
                       <SelectTrigger className="bg-slate-950/60 border-slate-800/80 text-white rounded-xl">
                         <SelectValue placeholder="Select Niche" />
                       </SelectTrigger>

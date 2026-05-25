@@ -10,7 +10,7 @@ const getBaseUrl = () => {
 };
 
 export const api = hc<AppType>(getBaseUrl(), {
-  fetch: (input, init) => {
+  fetch: (input: RequestInfo | URL, init?: RequestInit) => {
     const headers = new Headers(init?.headers || {});
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("reelio_mock_user");
