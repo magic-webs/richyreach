@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 
 interface User {
@@ -10,7 +11,7 @@ interface User {
 }
 
 export default function Home() {
-  const [users, setUsers] = useState<User[]>([]);
+  const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   
@@ -18,61 +19,52 @@ export default function Home() {
   const [authPassword, setAuthPassword] = useState("");
   const [authResponse, setAuthResponse] = useState<any>(null);
   
-  const [loadingUsers, setLoadingUsers] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
-  const [addUserLoading, setAddUserLoading] = useState(false);
 
-  const fetchUsers = async () => {
-    try {
-      setLoadingUsers(true);
-      setError(null);
+  // TanStack Query for users list
+  const { data: users = [], isLoading: loadingUsers, refetch: fetchUsers } = useQuery<User[]>({
+    queryKey: ["users"],
+    queryFn: async () => {
       const res = await api.api.users.$get();
-      if (res.ok) {
-        const json = await res.json();
-        setUsers(json.data);
-      } else {
+      if (!res.ok) {
         const json = await res.json() as any;
-        setError(json.error?.message || "Failed to load users");
+        throw new Error(json.error?.message || "Failed to load users");
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to connect to Hono API");
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
+      const json = await res.json();
+      return json.data;
+    },
+  });
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  // TanStack Mutation for adding user
+  const addUserMutation = useMutation({
+    mutationFn: async (newUser: { name: string; email: string }) => {
+      const res = await api.api.users.$post({
+        json: newUser,
+      });
+      const json = await res.json() as any;
+      if (!res.ok) {
+        throw new Error(json.error?.message || json.issues?.[0]?.message || "Failed to create user");
+      }
+      return json.data;
+    },
+    onSuccess: (newUser) => {
+      setSuccessMessage(`User "${newUser.name}" added successfully!`);
+      setName("");
+      setEmail("");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (err: any) => {
+      setError(err.message || "Request failed");
+    },
+  });
 
-  const handleAddUser = async (e: React.FormEvent) => {
+  const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
-    setAddUserLoading(true);
-    
-    try {
-      const res = await api.api.users.$post({
-        json: { name, email },
-      });
-      const json = await res.json() as any;
-      
-      if (res.ok && json.success) {
-        setSuccessMessage(`User "${json.data.name}" added successfully!`);
-        setName("");
-        setEmail("");
-        fetchUsers();
-      } else {
-        const errMsg = json.error?.message || json.issues?.[0]?.message || "Failed to create user";
-        setError(errMsg);
-      }
-    } catch (err: any) {
-      setError(err.message || "Request failed");
-    } finally {
-      setAddUserLoading(false);
-    }
+    addUserMutation.mutate({ name, email });
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -185,10 +177,10 @@ export default function Home() {
 
                 <button
                   type="submit"
-                  disabled={addUserLoading}
+                  disabled={addUserMutation.isPending}
                   className="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-white font-medium py-2 rounded-lg text-sm transition-colors shadow-lg shadow-indigo-600/10 cursor-pointer"
                 >
-                  {addUserLoading ? "Adding..." : "Add User"}
+                  {addUserMutation.isPending ? "Adding..." : "Add User"}
                 </button>
               </form>
 
@@ -209,7 +201,7 @@ export default function Home() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-slate-300">Active Users List</h3>
                   <button 
-                    onClick={fetchUsers} 
+                    onClick={() => { fetchUsers(); }} 
                     className="text-xs text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer"
                   >
                     Refresh

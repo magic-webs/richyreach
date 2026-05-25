@@ -2,18 +2,16 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { HonoEnv } from "../types";
-
-// Mock user store
-const mockUsers = [
-  { id: "1", name: "Alice Doe", email: "alice@example.com" },
-  { id: "2", name: "Bob Smith", email: "bob@example.com" },
-];
+import { getDb } from "../db";
+import { users } from "../db/schema";
 
 const usersApp = new Hono<HonoEnv>()
-  .get("/", (c) => {
+  .get("/", async (c) => {
+    const db = getDb(c.env);
+    const data = await db.select().from(users);
     return c.json({
       success: true,
-      data: mockUsers,
+      data,
     });
   })
   .post(
@@ -27,14 +25,16 @@ const usersApp = new Hono<HonoEnv>()
     ),
     async (c) => {
       const { name, email } = c.req.valid("json");
+      const db = getDb(c.env);
       
+      const id = crypto.randomUUID();
       const newUser = {
-        id: String(mockUsers.length + 1),
+        id,
         name,
         email,
       };
       
-      mockUsers.push(newUser);
+      await db.insert(users).values(newUser);
       
       return c.json(
         {
