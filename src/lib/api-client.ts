@@ -9,5 +9,19 @@ const getBaseUrl = () => {
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 };
 
-export const api = hc<AppType>(getBaseUrl());
+export const api = hc<AppType>(getBaseUrl(), {
+  fetch: (input, init) => {
+    const headers = new Headers(init?.headers || {});
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("reelio_mock_user");
+      if (saved) {
+        try {
+          const user = JSON.parse(saved);
+          headers.set("Authorization", `Bearer mock-${user.role}`);
+        } catch (e) {}
+      }
+    }
+    return fetch(input, { ...init, headers });
+  }
+});
 export type ApiClient = typeof api;
