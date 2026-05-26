@@ -5,6 +5,7 @@ import { useMockAuth } from "../layout-shell";
 import { api } from "@/lib/api-client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { GlassButton } from "@/components/ui/glass-button";
 
 export default function ChatPage() {
   const { user } = useMockAuth();
@@ -118,9 +119,9 @@ export default function ChatPage() {
   return (
     <div className="max-w-6xl mx-auto h-[calc(100vh-12rem)] flex gap-6 animate-fade-in relative">
       {/* Channels Sidebar List (Left pane) */}
-      <div className="w-80 bg-slate-900/35 border border-slate-800/80 rounded-3xl backdrop-blur-md flex flex-col overflow-hidden">
-        <div className="p-5 border-b border-slate-800/60">
-          <h2 className="text-base font-bold text-white">Inbox Channels</h2>
+      <div className="w-80 bg-white/80 dark:bg-slate-900/35 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-xl shadow-slate-100/40 dark:shadow-none backdrop-blur-md flex flex-col overflow-hidden">
+        <div className="p-5 border-b border-slate-150 dark:border-slate-800/60">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">Inbox Channels</h2>
           <p className="text-[10px] text-slate-500 font-semibold uppercase mt-1">Direct Brand-Creator Deals</p>
         </div>
 
@@ -128,8 +129,8 @@ export default function ChatPage() {
           {loadingRooms ? (
             <div className="flex items-center justify-center h-40">
               <span className="relative flex h-5 w-5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/75 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
               </span>
             </div>
           ) : rooms.length === 0 ? (
@@ -152,17 +153,17 @@ export default function ChatPage() {
                   onClick={() => handleRoomSelect(room)}
                   className={`p-3 rounded-2xl flex items-center gap-3 cursor-pointer transition-all border ${
                     isSelected
-                      ? "bg-indigo-600/15 border-indigo-500/40 text-white"
-                      : "bg-slate-950/20 border-slate-800/40 hover:bg-slate-900/40 text-slate-400 hover:text-slate-200"
+                      ? "bg-primary/10 border-primary/30 text-primary dark:text-white"
+                      : "bg-slate-50/50 dark:bg-slate-950/20 border-slate-100 dark:border-slate-800/40 text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-900/40 hover:text-slate-900 dark:hover:text-slate-200"
                   }`}
                 >
                   <img
                     src={avatar}
                     alt={title}
-                    className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 p-0.5 object-contain"
+                    className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0.5 object-contain"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold truncate text-slate-200">{title}</p>
+                    <p className={`text-xs font-bold truncate ${isSelected ? "text-primary dark:text-white" : "text-slate-800 dark:text-slate-200"}`}>{title}</p>
                     <p className="text-[10px] text-slate-500 truncate mt-0.5">{subtitle}</p>
                   </div>
                 </div>
@@ -173,25 +174,25 @@ export default function ChatPage() {
       </div>
 
       {/* Main chat window pane (Right pane) */}
-      <div className="flex-1 bg-slate-900/35 border border-slate-800/80 rounded-3xl backdrop-blur-md flex flex-col overflow-hidden relative">
-        <div className="absolute inset-0 bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none -mr-40 -mt-40 z-0"></div>
+      <div className="flex-1 bg-white/80 dark:bg-slate-900/35 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-xl shadow-slate-100/40 dark:shadow-none backdrop-blur-md flex flex-col overflow-hidden relative">
+        <div className="absolute inset-0 bg-primary/5 rounded-full blur-[120px] pointer-events-none -mr-40 -mt-40 z-0"></div>
 
         {!selectedRoom ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 z-10">
-            <div className="w-16 h-16 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center mb-4 text-indigo-400">
+            <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-center mb-4 text-primary">
               <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
-            <h3 className="text-base font-bold text-slate-300">Negotiation Console</h3>
-            <p className="text-xs text-slate-500 max-w-sm mt-1">
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-300">Negotiation Console</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-500 max-w-sm mt-1">
               Select a conversation channel from the inbox to agree on content format deliverables and escrow payments.
             </p>
           </div>
         ) : (
           <>
             {/* Thread Header */}
-            <div className="p-4 border-b border-slate-800/60 flex items-center gap-3.5 z-10 bg-slate-900/55 backdrop-blur-md">
+            <div className="p-4 border-b border-slate-150 dark:border-slate-800/60 flex items-center gap-3.5 z-10 bg-slate-50/80 dark:bg-slate-900/55 backdrop-blur-md">
               <img
                 src={
                   user.role === "influencer"
@@ -199,10 +200,10 @@ export default function ChatPage() {
                     : (selectedRoom.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${selectedRoom.name}`)
                 }
                 alt="Selected Chat Avatar"
-                className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 p-0.5 object-contain"
+                className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0.5 object-contain"
               />
               <div>
-                <h3 className="text-xs font-bold text-white">
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white">
                   {user.role === "influencer" ? selectedRoom.companyName : selectedRoom.name}
                 </h3>
                 <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
@@ -216,7 +217,7 @@ export default function ChatPage() {
               {loadingMessages && messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <span className="relative flex h-6 w-6">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/75 opacity-75"></span>
                   </span>
                 </div>
               ) : messages.length === 0 ? (
@@ -237,15 +238,15 @@ export default function ChatPage() {
                         <img
                           src={msg.senderAvatar || `https://api.dicebear.com/7.x/initials/svg?seed=${msg.senderName}`}
                           alt={msg.senderName}
-                          className="w-7 h-7 rounded-lg bg-slate-900 border border-slate-800 shrink-0 self-end mb-1"
+                          className="w-7 h-7 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shrink-0 self-end mb-1"
                         />
                       )}
                       <div>
                         <div
                           className={`p-3.5 rounded-2xl text-xs leading-relaxed ${
                             isMe
-                              ? "bg-indigo-600 text-white rounded-br-none shadow-md shadow-indigo-600/10"
-                              : "bg-slate-950 border border-slate-850 text-slate-300 rounded-bl-none"
+                              ? "bg-primary text-white rounded-br-none shadow-md shadow-primary/10"
+                              : "bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 text-slate-850 dark:text-slate-300 rounded-bl-none"
                           }`}
                         >
                           {msg.content}
@@ -264,7 +265,7 @@ export default function ChatPage() {
             {/* Message Input Panel */}
             <form
               onSubmit={handleSendMessage}
-              className="p-4 border-t border-slate-800/60 bg-slate-950/20 backdrop-blur-md flex gap-3.5 items-center z-10"
+              className="p-4 border-t border-slate-150 dark:border-slate-800/60 bg-slate-100/50 dark:bg-slate-950/20 backdrop-blur-md flex gap-3.5 items-center z-10"
             >
               <Input
                 type="text"
@@ -272,17 +273,18 @@ export default function ChatPage() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 disabled={sending}
-                className="flex-1 bg-slate-950/80 border-slate-850 text-white rounded-xl h-11 text-xs focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20"
+                className="flex-1 bg-white dark:bg-slate-955 border-slate-250 dark:border-slate-850 text-slate-900 dark:text-white rounded-xl h-11 text-xs focus:border-primary focus:ring-1 focus:ring-primary/20"
               />
-              <button
+              <GlassButton
                 type="submit"
                 disabled={sending || !newMessage.trim()}
-                className="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-white p-3 rounded-xl transition-all cursor-pointer shadow-md shadow-indigo-600/15"
+                variant="primary"
+                className="h-11 w-11 p-0 rounded-xl shrink-0"
               >
                 <svg className="w-5 h-5 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
-              </button>
+              </GlassButton>
             </form>
           </>
         )}

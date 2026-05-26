@@ -31,7 +31,7 @@ export class WhatsAppService {
         body: new URLSearchParams({
           From: formattedFrom,
           To: formattedPhone,
-          Body: `Your Reelio verification code is: ${code}. It expires in 10 minutes.`,
+          Body: `Your Richy Reach verification code is: ${code}. It expires in 10 minutes.`,
         }),
       });
 

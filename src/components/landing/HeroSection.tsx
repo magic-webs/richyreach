@@ -168,9 +168,9 @@ export function HeroSection({ isDark }: { isDark: boolean }) {
         </h1>
 
         {/* Subtitle */}
-        <p className="max-w-2xl mx-auto lg:mx-0 text-base sm:text-lg leading-relaxed"
+        <p className="max-w-2xl mx-auto lg:mx-0 text-base sm:text-lg leading-relaxed font-sans"
           style={{ color: isDark ? "rgba(148,163,184,0.9)" : "rgba(67,56,202,0.75)" }}>
-          Reelio bridges the gap between premium brands and world-class creators.{" "}
+          Richy Reach bridges the gap between premium brands and world-class creators.{" "}
           Connect brands with creators instantly using AI-powered campaign matching, organic reach prediction, and built-in collaboration chat.
         </p>
 

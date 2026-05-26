@@ -14,23 +14,23 @@ export function Footer({ isDark }: { isDark: boolean }) {
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-3">
           <span
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-white font-black text-lg"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-white font-bold text-lg font-serif-brand"
             style={{
-              background: "linear-gradient(135deg, rgba(99,102,241,0.9), rgba(139,92,246,0.9))",
-              boxShadow: "0 4px 14px rgba(99,102,241,0.4)"
+              background: "linear-gradient(135deg, #3F030B, #7E1523)",
+              boxShadow: "0 4px 14px rgba(63,3,11,0.35)"
             }}
           >
             R
           </span>
-          <span className="font-bold text-lg"
+          <span className="font-bold text-lg font-serif-brand"
             style={{ color: isDark ? "#e2e8f0" : "#1e1b4b" }}>
-            Reelio
+            Richy Reach
           </span>
         </div>
 
         <p className="text-xs"
           style={{ color: isDark ? "rgba(148,163,184,0.7)" : "rgba(79,70,229,0.65)" }}>
-          &copy; 2026 Reelio Inc. All rights reserved. Made with love for creators worldwide.
+          &copy; 2026 Richy Reach Inc. All rights reserved. Made with love for creators worldwide.
         </p>
 
         <div className="flex gap-6 text-xs"

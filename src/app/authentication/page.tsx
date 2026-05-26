@@ -250,22 +250,22 @@ export default function AuthPage() {
       
       {/* Subtle background ambient blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-indigo-150 dark:bg-indigo-950/40 rounded-full blur-[130px] opacity-70 dark:opacity-40" />
-        <div className="absolute -bottom-40 -right-40 w-[450px] h-[450px] bg-purple-150 dark:bg-purple-950/30 rounded-full blur-[130px] opacity-70 dark:opacity-30" />
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-[#3F030B]/10 dark:bg-[#3F030B]/20 rounded-full blur-[130px] opacity-70 dark:opacity-40" />
+        <div className="absolute -bottom-40 -right-40 w-[450px] h-[450px] bg-[#7E1523]/10 dark:bg-[#7E1523]/15 rounded-full blur-[130px] opacity-70 dark:opacity-30" />
       </div>
 
       {/* Logo Brand Header */}
       <a href="/" className="flex items-center gap-2.5 mb-8 no-underline group">
-        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-black text-2xl shadow-xl shadow-indigo-500/20 group-hover:shadow-indigo-500/35 transition-all">
+        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#3F030B] to-[#7E1523] text-white font-bold text-2xl shadow-xl shadow-[#3F030B]/25 group-hover:shadow-[#3F030B]/40 transition-all font-serif-brand">
           R
         </span>
-        <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
-          Reelio
+        <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#3F030B] to-[#7E1523] dark:from-white dark:to-slate-300 font-serif-brand tracking-tight">
+          Richy Reach
         </span>
       </a>
 
-      {/* Auth Main Card */}
-      <div className="w-full max-w-[440px] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden">
+      {/* Auth Main Card with Premium Glass Effect */}
+      <div className="w-full max-w-[440px] bg-white/70 dark:bg-slate-900/60 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20 dark:border-slate-800/80 overflow-hidden">
         
         {/* Step 1 & 2 Headers */}
         <div className="px-8 pt-8">
@@ -430,7 +430,7 @@ export default function AuthPage() {
                     id="auth-identifier"
                     type={authMethod === "email" ? "email" : "tel"}
                     required
-                    placeholder={authMethod === "email" ? "you@reelio.com" : "+1 (555) 000-0000"}
+                    placeholder={authMethod === "email" ? "you@richyreach.com" : "+1 (555) 000-0000"}
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-indigo-500 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all font-semibold"
@@ -535,7 +535,7 @@ export default function AuthPage() {
 
       {/* Footer copyright */}
       <p className="mt-8 text-xs text-slate-400 dark:text-slate-600 text-center">
-        By authentication you verify and agree to Reelio&apos;s{" "}
+        By authentication you verify and agree to Richy Reach&apos;s{" "}
         <a href="#" className="text-slate-500 underline hover:text-indigo-600 transition-colors">Terms of Service</a>
         {" & "}
         <a href="#" className="text-slate-500 underline hover:text-indigo-600 transition-colors">Privacy Policy</a>.

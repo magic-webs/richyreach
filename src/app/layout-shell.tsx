@@ -26,7 +26,7 @@ interface AuthContextType {
 const defaultUser: UserSession = {
   id: "mock_influencer_id",
   name: "Avijit Dev",
-  email: "avijit@reelio.com",
+  email: "avijit@richyreach.com",
   role: "influencer",
   avatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=avijit",
   instagramHandle: "avijit_creates",
@@ -78,25 +78,25 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       fetch("/api/auth/session", {
         headers: { "Authorization": `Bearer ${token}` }
       })
-      .then(res => res.json() as any)
-      .then(data => {
-        if (data && data.success && data.data && data.data.user) {
-          const syncedUser = {
-            id: data.data.user.id,
-            name: data.data.user.name,
-            email: data.data.user.email,
-            role: data.data.user.role,
-            avatar: data.data.user.image || `https://api.dicebear.com/7.x/adventurer/svg?seed=${data.data.user.name}`,
-          };
-          setUser(syncedUser);
-          localStorage.setItem("reelio_mock_user", JSON.stringify(syncedUser));
-        } else {
-          // Token invalid or expired
-          localStorage.removeItem("reelio_session_token");
-          localStorage.removeItem("reelio_mock_user");
-        }
-      })
-      .catch(err => console.error("Session sync failed:", err));
+        .then(res => res.json() as any)
+        .then(data => {
+          if (data && data.success && data.data && data.data.user) {
+            const syncedUser = {
+              id: data.data.user.id,
+              name: data.data.user.name,
+              email: data.data.user.email,
+              role: data.data.user.role,
+              avatar: data.data.user.image || `https://api.dicebear.com/7.x/adventurer/svg?seed=${data.data.user.name}`,
+            };
+            setUser(syncedUser);
+            localStorage.setItem("reelio_mock_user", JSON.stringify(syncedUser));
+          } else {
+            // Token invalid or expired
+            localStorage.removeItem("reelio_session_token");
+            localStorage.removeItem("reelio_mock_user");
+          }
+        })
+        .catch(err => console.error("Session sync failed:", err));
     }
   }, [pathname]);
 
@@ -106,7 +106,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       updatedUser = {
         id: "mock_influencer_id",
         name: "Avijit Dev",
-        email: "avijit@reelio.com",
+        email: "avijit@richyreach.com",
         role: "influencer",
         avatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=avijit",
         instagramHandle: user.instagramHandle || "avijit_creates",
@@ -124,7 +124,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       updatedUser = {
         id: "mock_admin_id",
         name: "Admin Moderator",
-        email: "admin@reelio.com",
+        email: "admin@richyreach.com",
         role: "admin",
         avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=admin",
       };
@@ -223,11 +223,11 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         <aside className="hidden md:flex w-64 border-r border-slate-200/80 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/35 backdrop-blur-xl shrink-0 sticky top-0 h-screen p-5 flex-col justify-between z-20">
           <div>
             <div className="flex items-center gap-3 mb-8 px-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-black text-xl shadow-lg shadow-indigo-500/20">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-[#3F030B] to-[#7E1523] text-white font-bold text-xl shadow-lg shadow-[#3F030B]/25">
                 R
               </span>
-              <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-slate-850 to-slate-700 dark:from-white dark:to-slate-300">
-                Reelio
+              <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#3F030B] via-[#7E1523] to-slate-800 dark:from-white dark:to-slate-300 font-serif-brand">
+                Richy Reach
               </span>
             </div>
 
@@ -239,7 +239,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
                     key={item.name}
                     href={item.href}
                     className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive
-                      ? "bg-indigo-50/10 dark:bg-indigo-600/20 text-indigo-600 dark:text-indigo-300 border-l-2 border-indigo-500 shadow-sm"
+                      ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary border-l-2 border-primary shadow-sm"
                       : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-slate-200"
                       }`}
                   >
@@ -305,14 +305,6 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
                   </div>
                 )}
               </div>
-
-              {/* Login Portal Access Button */}
-              <Link
-                href="/authentication"
-                className="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-600/15 transition-all cursor-pointer"
-              >
-                Sign In Portal
-              </Link>
             </div>
           </header>
 
@@ -329,11 +321,11 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
                 key={item.name}
                 href={item.href}
                 className={`flex flex-col items-center justify-center flex-1 h-full py-1 text-[9px] font-extrabold transition-all ${isActive
-                  ? "text-indigo-600 dark:text-indigo-400 scale-105"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-750 dark:hover:text-slate-200"
+                  ? "text-primary dark:text-primary-foreground scale-105"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-755 dark:hover:text-slate-200"
                   }`}
               >
-                <div className={`p-1 rounded-xl transition-all ${isActive ? "bg-indigo-50/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-455" : ""
+                <div className={`p-1 rounded-xl transition-all ${isActive ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground" : ""
                   }`}>
                   <item.icon />
                 </div>
@@ -342,7 +334,6 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
             );
           })}
         </nav>
-
       </div>
     </AuthContext.Provider>
   );

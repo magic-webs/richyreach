@@ -39,7 +39,7 @@ export class AuthController {
       // Dispatch via chosen method
       if (method === "email") {
         const apiKey = c.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
-        const fromEmail = c.env.RESEND_FROM_EMAIL || process.env.RESEND_FROM_EMAIL || "Reelio Auth <auth@reelioo.magicxbot.com>";
+        const fromEmail = c.env.RESEND_FROM_EMAIL || process.env.RESEND_FROM_EMAIL || "Richy Reach Auth <auth@reelioo.magicxbot.com>";
         
         console.log(`\n==================================================`);
         console.log(`[EMAIL OTP] Sending code [ ${code} ] to [ ${identifier} ]`);
@@ -56,10 +56,10 @@ export class AuthController {
               body: JSON.stringify({
                 from: fromEmail,
                 to: [identifier],
-                subject: "Verify your Reelio Account",
+                subject: "Verify your Richy Reach Account",
                 html: `
                   <div style="font-family: sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px;">
-                    <h2 style="color: #4f46e5; margin-bottom: 16px; font-weight: 800;">Reelio Platform Verification</h2>
+                    <h2 style="color: #3F030B; margin-bottom: 16px; font-weight: 800;">Richy Reach Platform Verification</h2>
                     <p>Use the following one-time verification code to secure your login:</p>
                     <div style="font-size: 32px; font-weight: bold; letter-spacing: 4px; padding: 16px 24px; background-color: #f3f4f6; text-align: center; border-radius: 12px; margin: 24px 0; color: #1e1b4b; font-family: monospace;">
                       ${code}
@@ -184,7 +184,7 @@ export class AuthController {
           await db.insert(schema.brandProfiles).values({
             userId,
             companyName: `${finalName}'s Brand`,
-            website: "https://reelio.com",
+            website: "https://richyreach.com",
             category: "General",
             description: "Active brand collaborating with top influencers.",
           });

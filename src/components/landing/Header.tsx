@@ -18,16 +18,16 @@ export function Header({ isDark, mounted }: { isDark: boolean; mounted: boolean 
         {/* Logo */}
         <div className="flex items-center gap-3">
           <span
-            className="flex h-10 w-10 items-center justify-center rounded-2xl font-black text-xl text-white shimmer-border"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl font-bold text-xl text-white shimmer-border font-serif-brand"
             style={{
-              background: "linear-gradient(135deg, rgba(99,102,241,0.9), rgba(139,92,246,0.9))",
-              boxShadow: "0 4px 20px rgba(99,102,241,0.5), inset 0 1px 0 rgba(255,255,255,0.3)"
+              background: "linear-gradient(135deg, #3F030B, #7E1523)",
+              boxShadow: "0 4px 20px rgba(63,3,11,0.3), inset 0 1px 0 rgba(255,255,255,0.3)"
             }}
           >
             R
           </span>
-          <span className={`text-2xl font-bold tracking-tight ${isDark ? "text-glass-gradient" : "text-glass-gradient-light"}`}>
-            Reelio
+          <span className={`text-2xl font-bold tracking-tight font-serif-brand ${isDark ? "text-glass-gradient" : "text-glass-gradient-light"}`}>
+            Richy Reach
           </span>
         </div>
 

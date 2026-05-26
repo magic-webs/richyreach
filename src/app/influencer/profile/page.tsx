@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { GlassButton } from "@/components/ui/glass-button";
 
 export default function InfluencerProfilePage() {
   const router = useRouter();
@@ -126,12 +127,12 @@ export default function InfluencerProfilePage() {
 
   if (user.role !== "influencer") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6 bg-slate-900/30 border border-slate-800/80 rounded-3xl backdrop-blur-md">
-        <h2 className="text-xl font-bold text-slate-300 mb-2">Access Restricted</h2>
-        <p className="text-slate-400 max-w-md mb-6">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-6 bg-white/80 dark:bg-slate-900/30 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-xl shadow-slate-100/40 dark:shadow-none backdrop-blur-md">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-200 mb-2">Access Restricted</h2>
+        <p className="text-slate-650 dark:text-slate-400 max-w-md mb-6">
           This onboarding page is only accessible to creators. Please use the sandbox controls in the sidebar to switch your role to **Influencer View**.
         </p>
-        <div className="animate-bounce text-indigo-400">
+        <div className="animate-bounce text-primary">
           <svg className="w-8 h-8 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
           </svg>
@@ -144,8 +145,8 @@ export default function InfluencerProfilePage() {
     return (
       <div className="flex items-center justify-center min-h-[40vh]">
         <div className="relative flex h-10 w-10 items-center justify-center">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-6 w-6 bg-indigo-600"></span>
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/75 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-6 w-6 bg-primary"></span>
         </div>
       </div>
     );
@@ -154,75 +155,77 @@ export default function InfluencerProfilePage() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
       {/* Hero Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-slate-900/80 to-indigo-950/40 p-8 rounded-3xl border border-slate-800/80 backdrop-blur-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-[100px] -mr-20 -mt-20"></div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-slate-900/80 to-[#3F030B]/20 p-8 rounded-3xl border border-slate-800/80 backdrop-blur-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[#3F030B]/10 rounded-full blur-[100px] -mr-20 -mt-20"></div>
         <div className="flex items-center gap-5 z-10">
           <img
             src={profile?.avatar || user.avatar}
             alt={profile?.name || user.name}
-            className="w-20 h-20 rounded-2xl border-2 border-indigo-500/50 bg-slate-800 p-1"
+            className="w-20 h-20 rounded-2xl border-2 border-primary/50 bg-slate-800 p-1"
           />
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300">
+            <h1 className="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300">
               {profile ? `@${profile.instagramHandle}` : "Setup your Profile"}
             </h1>
             <p className="text-slate-400 text-sm mt-1">{user.name} • Creator Account</p>
             {profile?.verified && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 mt-2 rounded-full text-xs font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 mt-2 rounded-full text-xs font-semibold bg-primary/15 text-primary border border-primary/30">
                 Verified Creator
               </span>
             )}
           </div>
         </div>
         <div className="z-10">
-          <button
+          <GlassButton
             type="button"
+            variant="outline"
+            size="sm"
             onClick={handleLogout}
-            className="px-5 py-2.5 rounded-xl text-xs font-bold bg-rose-500/15 hover:bg-rose-500/25 active:bg-rose-500/35 border border-rose-500/30 hover:border-rose-500/50 text-rose-400 hover:text-rose-350 transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-rose-500/10"
+            className="text-rose-450 hover:text-rose-350 border-rose-500/30 hover:border-rose-500/50 bg-rose-500/5 hover:bg-rose-500/15"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
             Sign Out
-          </button>
+          </GlassButton>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Profile Stats Overview (Only visible once profile is created/scraped) */}
         <div className="lg:col-span-1 space-y-6">
-          <Card className="bg-slate-900/40 border-slate-800/80 backdrop-blur-md">
+          <Card className="bg-white/85 dark:bg-slate-900/40 border-slate-200/80 dark:border-slate-800/80 backdrop-blur-md shadow-lg shadow-slate-100/50 dark:shadow-none">
             <CardHeader>
-              <CardTitle className="text-base text-slate-300">Instagram Stats</CardTitle>
+              <CardTitle className="text-base text-slate-900 dark:text-slate-300">Instagram Stats</CardTitle>
               <CardDescription>Deterministic values mock scraped on handle sync</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               {!profile ? (
-                <div className="text-center py-6 text-sm text-slate-500">
+                <div className="text-center py-6 text-sm text-slate-550">
                   Enter your Instagram handle and save to sync social stats.
                 </div>
               ) : (
                 <>
-                  <div className="p-4 rounded-2xl bg-slate-950/65 border border-slate-800/60 flex items-center justify-between">
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/65 border border-slate-150 dark:border-slate-800/60 flex items-center justify-between">
                     <div>
                       <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Followers</p>
-                      <p className="text-2xl font-black text-white mt-1">
+                      <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">
                         {profile.followers?.toLocaleString()}
                       </p>
                     </div>
-                    <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-lg">
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg">
                       {profile.level?.toUpperCase()}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl bg-slate-950/65 border border-slate-800/60">
+                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/65 border border-slate-150 dark:border-slate-800/60">
                       <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Engagement</p>
-                      <p className="text-lg font-black text-emerald-400 mt-1">{profile.engagementRate}%</p>
+                      <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-1">{profile.engagementRate}%</p>
                     </div>
-                    <div className="p-4 rounded-2xl bg-slate-950/65 border border-slate-800/60">
+                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/65 border border-slate-150 dark:border-slate-800/60">
                       <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Avg. Views</p>
-                      <p className="text-lg font-black text-indigo-300 mt-1">
+                      <p className="text-lg font-black text-primary mt-1">
                         {profile.avgViews ? profile.avgViews.toLocaleString() : "N/A"}
                       </p>
                     </div>
@@ -230,7 +233,7 @@ export default function InfluencerProfilePage() {
 
                   <div className="space-y-1.5">
                     <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider px-1">Bio Description</p>
-                    <div className="p-3 rounded-2xl bg-slate-950/65 border border-slate-800/40 text-xs text-slate-300 leading-relaxed italic">
+                    <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/65 border border-slate-150 dark:border-slate-800/40 text-xs text-slate-700 dark:text-slate-300 leading-relaxed italic">
                       "{profile.bio}"
                     </div>
                   </div>
@@ -240,15 +243,15 @@ export default function InfluencerProfilePage() {
           </Card>
 
           {profile?.skills && profile.skills.length > 0 && (
-            <Card className="bg-slate-900/40 border-slate-800/80 backdrop-blur-md">
+            <Card className="bg-white/85 dark:bg-slate-900/40 border-slate-200/80 dark:border-slate-800/80 backdrop-blur-md shadow-lg shadow-slate-100/50 dark:shadow-none">
               <CardHeader>
-                <CardTitle className="text-base text-slate-300">Expertise & Skills</CardTitle>
+                <CardTitle className="text-base text-slate-900 dark:text-slate-300">Expertise & Skills</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
                 {profile.skills.map((skill: string) => (
                   <span
                     key={skill}
-                    className="text-xs px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800/80 text-slate-300 font-semibold"
+                    className="text-xs px-3 py-1.5 rounded-xl bg-slate-550 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/80 text-slate-700 dark:text-slate-300 font-semibold"
                   >
                     {skill}
                   </span>
@@ -260,25 +263,25 @@ export default function InfluencerProfilePage() {
 
         {/* Profile Settings Form */}
         <div className="lg:col-span-2 space-y-8">
-          <Card className="bg-slate-900/40 border-slate-800/80 backdrop-blur-md">
+          <Card className="bg-white/85 dark:bg-slate-900/40 border-slate-200/80 dark:border-slate-800/80 backdrop-blur-md shadow-lg shadow-slate-100/50 dark:shadow-none">
             <CardHeader>
-              <CardTitle className="text-xl text-white">Creator Setup</CardTitle>
+              <CardTitle className="text-xl text-slate-900 dark:text-white">Creator Setup</CardTitle>
               <CardDescription>Sync your accounts and manage collaboration details</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="instagramHandle" className="text-slate-300 text-xs font-bold uppercase">
+                  <Label htmlFor="instagramHandle" className="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase">
                     Instagram Handle
                   </Label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-3 text-slate-500 font-semibold">@</span>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-4 pointer-events-none text-slate-500 font-semibold select-none">@</span>
                     <Input
                       id="instagramHandle"
                       placeholder="username"
                       value={instagramHandle}
                       onChange={(e) => setInstagramHandle(e.target.value)}
-                      className="pl-8 bg-slate-950/60 border-slate-800/80 text-white rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20"
+                      className="pl-9 bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800/80 text-slate-900 dark:text-white rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/20"
                       required
                     />
                   </div>
@@ -289,14 +292,14 @@ export default function InfluencerProfilePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="niche" className="text-slate-300 text-xs font-bold uppercase">
+                    <Label htmlFor="niche" className="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase">
                       Content Niche
                     </Label>
                     <Select value={niche} onValueChange={(val) => val && setNiche(val)}>
-                      <SelectTrigger className="bg-slate-950/60 border-slate-800/80 text-white rounded-xl">
+                      <SelectTrigger className="bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800/80 text-slate-900 dark:text-white rounded-xl">
                         <SelectValue placeholder="Select Niche" />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-slate-800 text-slate-300">
+                      <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-850 text-slate-850 dark:text-slate-300">
                         {niches.map((n) => (
                           <SelectItem key={n} value={n} className="hover:bg-slate-800 focus:bg-slate-800">
                             {n}
@@ -305,49 +308,33 @@ export default function InfluencerProfilePage() {
                       </SelectContent>
                     </Select>
                   </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="pricing" className="text-slate-300 text-xs font-bold uppercase">
-                      Base Rate per Post (USD)
+                    <Label htmlFor="skills" className="text-slate-700 dark:text-slate-300 text-xs font-bold uppercase">
+                      Skills (Comma separated)
                     </Label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-3 text-slate-500 font-semibold">$</span>
-                      <Input
-                        id="pricing"
-                        type="number"
-                        min="0"
-                        placeholder="150"
-                        value={pricingUsd}
-                        onChange={(e) => setPricingUsd(e.target.value)}
-                        className="pl-8 bg-slate-950/60 border-slate-800/80 text-white rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20"
-                        required
-                      />
-                    </div>
+                    <Input
+                      id="skills"
+                      placeholder="Short-form video, Product photography, Storyboarding"
+                      value={skillsText}
+                      onChange={(e) => setSkillsText(e.target.value)}
+                      className="bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800/80 text-slate-900 dark:text-white rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/20"
+                    />
                   </div>
+
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="skills" className="text-slate-300 text-xs font-bold uppercase">
-                    Skills (Comma separated)
-                  </Label>
-                  <Input
-                    id="skills"
-                    placeholder="Short-form video, Product photography, Storyboarding"
-                    value={skillsText}
-                    onChange={(e) => setSkillsText(e.target.value)}
-                    className="bg-slate-950/60 border-slate-800/80 text-white rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20"
-                  />
-                </div>
 
-                <button
+
+                <GlassButton
                   type="submit"
                   disabled={saving}
-                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  variant="primary"
+                  className="w-full"
                 >
                   {saving ? (
                     <>
                       <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4}></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                       Syncing & Saving...
@@ -360,7 +347,7 @@ export default function InfluencerProfilePage() {
                       Sync & Save Profile
                     </>
                   )}
-                </button>
+                </GlassButton>
               </form>
             </CardContent>
           </Card>
@@ -368,12 +355,12 @@ export default function InfluencerProfilePage() {
           {/* Scraped Portfolio Feed (if any) */}
           {profile?.portfolio && profile.portfolio.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-white pl-1">Recent Content Portfolio</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white pl-1">Recent Content Portfolio</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 {profile.portfolio.map((post: any) => (
                   <div
                     key={post.id}
-                    className="group bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden backdrop-blur-md hover:border-slate-700/60 transition-all"
+                    className="group bg-white/85 dark:bg-slate-900/40 border border-slate-200/85 dark:border-slate-800/80 rounded-2xl overflow-hidden backdrop-blur-md hover:border-slate-350 dark:hover:border-slate-700/60 shadow-lg shadow-slate-100/50 dark:shadow-none transition-all"
                   >
                     <div className="relative aspect-square bg-slate-950 overflow-hidden">
                       <img
@@ -383,7 +370,7 @@ export default function InfluencerProfilePage() {
                       />
                       {post.mediaType === "video" && (
                         <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg flex items-center gap-1.5">
-                          <svg className="w-3.5 h-3.5 text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+                          <svg className="w-3.5 h-3.5 text-primary" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
                           </svg>
                           <span className="text-[10px] font-bold text-white">REEL</span>
@@ -391,10 +378,10 @@ export default function InfluencerProfilePage() {
                       )}
                     </div>
                     <div className="p-4 space-y-1">
-                      <p className="text-xs font-bold text-slate-200 line-clamp-1">
+                      <p className="text-xs font-bold text-slate-900 dark:text-slate-200 line-clamp-1">
                         {post.title || "Instagram Post"}
                       </p>
-                      <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                         {post.description}
                       </p>
                     </div>

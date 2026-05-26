@@ -204,8 +204,8 @@ export default function CreateCampaignPage() {
                   <Label htmlFor="budget" className="text-slate-300 text-xs font-bold uppercase">
                     Campaign Budget (USD)
                   </Label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-3 text-slate-500 font-semibold">$</span>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-4 pointer-events-none text-slate-500 font-semibold select-none">$</span>
                     <Input
                       id="budget"
                       type="number"
@@ -213,7 +213,7 @@ export default function CreateCampaignPage() {
                       placeholder="1000"
                       value={budgetUsd}
                       onChange={(e) => setBudgetUsd(e.target.value)}
-                      className="pl-8 bg-slate-950/60 border-slate-800/80 text-white rounded-xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20"
+                      className="pl-9 bg-slate-955 border-slate-800/80 text-white rounded-xl focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20"
                       required
                     />
                   </div>

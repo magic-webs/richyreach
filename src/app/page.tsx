@@ -58,7 +58,7 @@ export default function LandingPage() {
           backdrop-filter: blur(24px) saturate(180%);
           -webkit-backdrop-filter: blur(24px) saturate(180%);
           border: 1px solid rgba(255,255,255,0.7);
-          box-shadow: 0 8px 32px rgba(109,40,217,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+          box-shadow: 0 8px 32px rgba(63,3,11,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
         }
 
         .glass-card {
@@ -68,7 +68,7 @@ export default function LandingPage() {
           border: 1px solid rgba(255,255,255,0.1);
           box-shadow:
             0 25px 50px rgba(0,0,0,0.35),
-            0 0 0 1px rgba(139,92,246,0.08),
+            0 0 0 1px rgba(63,3,11,0.08),
             inset 0 1px 0 rgba(255,255,255,0.12),
             inset 0 -1px 0 rgba(0,0,0,0.1);
         }
@@ -79,7 +79,7 @@ export default function LandingPage() {
           -webkit-backdrop-filter: blur(32px) saturate(200%);
           border: 1px solid rgba(255,255,255,0.8);
           box-shadow:
-            0 25px 50px rgba(109,40,217,0.1),
+            0 25px 50px rgba(63,3,11,0.1),
             inset 0 1px 0 rgba(255,255,255,0.95);
         }
 
@@ -87,16 +87,16 @@ export default function LandingPage() {
           background: rgba(10,8,30,0.6);
           backdrop-filter: blur(40px) saturate(200%);
           -webkit-backdrop-filter: blur(40px) saturate(200%);
-          border-bottom: 1px solid rgba(139,92,246,0.15);
-          box-shadow: 0 1px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(139,92,246,0.05);
+          border-bottom: 1px solid rgba(63,3,11,0.15);
+          box-shadow: 0 1px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(63,3,11,0.05);
         }
 
         .glass-nav-light {
           background: rgba(255,255,255,0.7);
           backdrop-filter: blur(40px) saturate(200%);
           -webkit-backdrop-filter: blur(40px) saturate(200%);
-          border-bottom: 1px solid rgba(139,92,246,0.2);
-          box-shadow: 0 1px 40px rgba(109,40,217,0.08);
+          border-bottom: 1px solid rgba(63,3,11,0.2);
+          box-shadow: 0 1px 40px rgba(63,3,11,0.08);
         }
 
         .shimmer-border {
@@ -108,7 +108,7 @@ export default function LandingPage() {
           inset: 0;
           border-radius: inherit;
           padding: 1px;
-          background: linear-gradient(135deg, rgba(139,92,246,0.6), rgba(59,130,246,0.3), rgba(236,72,153,0.4), rgba(139,92,246,0.6));
+          background: linear-gradient(135deg, rgba(63,3,11,0.6), rgba(126,21,35,0.3), rgba(226,63,89,0.4), rgba(63,3,11,0.6));
           background-size: 300% 300%;
           animation: shimmer-rotate 4s linear infinite;
           -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -124,8 +124,8 @@ export default function LandingPage() {
           100% { background-position: 0% 50%; }
         }
 
-        .glow-indigo { box-shadow: 0 0 30px rgba(99,102,241,0.4), 0 0 60px rgba(99,102,241,0.15); }
-        .glow-purple { box-shadow: 0 0 30px rgba(168,85,247,0.4), 0 0 60px rgba(168,85,247,0.15); }
+        .glow-indigo { box-shadow: 0 0 30px rgba(63,3,11,0.4), 0 0 60px rgba(63,3,11,0.15); }
+        .glow-purple { box-shadow: 0 0 30px rgba(126,21,35,0.4), 0 0 60px rgba(126,21,35,0.15); }
 
         .orb {
           border-radius: 50%;
@@ -150,41 +150,41 @@ export default function LandingPage() {
         }
 
         .btn-glass {
-          background: rgba(139,92,246,0.2);
+          background: rgba(126,21,35,0.2);
           backdrop-filter: blur(16px);
-          border: 1px solid rgba(139,92,246,0.4);
+          border: 1px solid rgba(126,21,35,0.4);
           transition: all 0.3s ease;
         }
         .btn-glass:hover {
-          background: rgba(139,92,246,0.35);
-          border-color: rgba(139,92,246,0.7);
-          box-shadow: 0 0 20px rgba(139,92,246,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
+          background: rgba(126,21,35,0.35);
+          border-color: rgba(126,21,35,0.7);
+          box-shadow: 0 0 20px rgba(126,21,35,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
           transform: translateY(-1px);
         }
 
         .btn-glass-primary {
-          background: linear-gradient(135deg, rgba(99,102,241,0.9), rgba(139,92,246,0.9));
+          background: linear-gradient(135deg, rgba(63,3,11,0.9), rgba(126,21,35,0.9));
           backdrop-filter: blur(16px);
-          border: 1px solid rgba(139,92,246,0.5);
-          box-shadow: 0 8px 25px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+          border: 1px solid rgba(126,21,35,0.5);
+          box-shadow: 0 8px 25px rgba(63,3,11,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
           transition: all 0.3s ease;
         }
         .btn-glass-primary:hover {
-          background: linear-gradient(135deg, rgba(99,102,241,1), rgba(139,92,246,1));
-          box-shadow: 0 12px 35px rgba(99,102,241,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
+          background: linear-gradient(135deg, rgba(63,3,11,1), rgba(126,21,35,1));
+          box-shadow: 0 12px 35px rgba(63,3,11,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
           transform: translateY(-2px);
         }
 
         .btn-glass-purple {
-          background: linear-gradient(135deg, rgba(139,92,246,0.9), rgba(192,132,252,0.8));
+          background: linear-gradient(135deg, rgba(126,21,35,0.9), rgba(226,63,89,0.8));
           backdrop-filter: blur(16px);
-          border: 1px solid rgba(192,132,252,0.5);
-          box-shadow: 0 8px 25px rgba(139,92,246,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+          border: 1px solid rgba(226,63,89,0.5);
+          box-shadow: 0 8px 25px rgba(126,21,35,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
           transition: all 0.3s ease;
         }
         .btn-glass-purple:hover {
-          background: linear-gradient(135deg, rgba(139,92,246,1), rgba(192,132,252,1));
-          box-shadow: 0 12px 35px rgba(139,92,246,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
+          background: linear-gradient(135deg, rgba(126,21,35,1), rgba(226,63,89,1));
+          box-shadow: 0 12px 35px rgba(126,21,35,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
           transform: translateY(-2px);
         }
 
@@ -197,8 +197,8 @@ export default function LandingPage() {
         }
         .feature-glass:hover {
           background: rgba(255,255,255,0.07);
-          border-color: rgba(139,92,246,0.3);
-          box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 20px rgba(139,92,246,0.1), inset 0 1px 0 rgba(255,255,255,0.12);
+          border-color: rgba(126,21,35,0.4);
+          box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 20px rgba(126,21,35,0.1), inset 0 1px 0 rgba(255,255,255,0.12);
           transform: translateY(-4px);
         }
 
@@ -206,25 +206,25 @@ export default function LandingPage() {
           background: rgba(255,255,255,0.5);
           backdrop-filter: blur(20px);
           border: 1px solid rgba(255,255,255,0.75);
-          box-shadow: 0 4px 16px rgba(109,40,217,0.06), inset 0 1px 0 rgba(255,255,255,0.9);
+          box-shadow: 0 4px 16px rgba(63,3,11,0.06), inset 0 1px 0 rgba(255,255,255,0.9);
           transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
         }
         .feature-glass-light:hover {
           background: rgba(255,255,255,0.7);
-          border-color: rgba(139,92,246,0.4);
-          box-shadow: 0 8px 30px rgba(109,40,217,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+          border-color: rgba(126,21,35,0.5);
+          box-shadow: 0 8px 30px rgba(126,21,35,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
           transform: translateY(-4px);
         }
 
         .text-glass-gradient {
-          background: linear-gradient(135deg, #818cf8 0%, #a78bfa 40%, #f472b6 100%);
+          background: linear-gradient(135deg, #7E1523 0%, #3F030B 50%, #E23F59 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
 
         .text-glass-gradient-light {
-          background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 40%, #db2777 100%);
+          background: linear-gradient(135deg, #3F030B 0%, #7E1523 50%, #8E0E1A 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;

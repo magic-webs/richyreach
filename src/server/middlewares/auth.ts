@@ -58,7 +58,7 @@ export const requireAuth = (): MiddlewareHandler<HonoEnv> => {
               await db.insert(schema.brandProfiles).values({
                 userId: mockId,
                 companyName: "Mock Brand Co.",
-                website: "https://reelio.com",
+                website: "https://richyreach.com",
                 category: "Fashion",
                 description: "Mock brand account for developer testing.",
               });
@@ -71,7 +71,7 @@ export const requireAuth = (): MiddlewareHandler<HonoEnv> => {
         c.set("user", {
           id: mockId,
           name: `Mock ${mockRole.charAt(0).toUpperCase() + mockRole.slice(1)}`,
-          email: `${mockRole}@reelio-mock.com`,
+          email: `${mockRole}@richyreach-mock.com`,
           role: mockRole,
         });
         return await next();
