@@ -1,5 +1,3 @@
-import puppeteer from "puppeteer";
-
 export interface InstagramPost {
   id: string;
   mediaUrl: string;
@@ -32,54 +30,6 @@ export async function fetchInstagramProfile(handle: string): Promise<InstagramPr
   let profilePicture = `https://api.dicebear.com/7.x/adventurer/svg?seed=${cleanHandle}`;
   let bio = "";
   let scraped = false;
-
-  try {
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    
-    const page = await browser.newPage();
-    // Setting a common user agent to avoid immediate blocks
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36');
-    
-    await page.goto(`https://www.instagram.com/${cleanHandle}/`, { waitUntil: 'domcontentloaded', timeout: 20000 });
-
-    // Extract meta description: "123 Followers, 456 Following, 789 Posts - See Instagram photos and videos from Name (@handle)"
-    const metaDescription = await page.$eval('meta[name="description"]', el => el.getAttribute("content")).catch(() => "");
-    if (metaDescription) {
-      const followersMatch = metaDescription.match(/([\d,.]+[KMB]?)\s+Followers/i);
-      if (followersMatch && followersMatch[1]) {
-        let countStr = followersMatch[1].toUpperCase().replace(/,/g, '');
-        let multiplier = 1;
-        if (countStr.includes('K')) { multiplier = 1000; countStr = countStr.replace('K', ''); }
-        else if (countStr.includes('M')) { multiplier = 1000000; countStr = countStr.replace('M', ''); }
-        else if (countStr.includes('B')) { multiplier = 1000000000; countStr = countStr.replace('B', ''); }
-        
-        followers = Math.round(parseFloat(countStr) * multiplier);
-        scraped = true;
-      }
-    }
-
-    // Extract title: "Name (@handle) • Instagram photos and videos"
-    const title = await page.title().catch(() => "");
-    if (title) {
-      const nameMatch = title.split('(')[0];
-      if (nameMatch) {
-        name = nameMatch.trim();
-      }
-    }
-
-    // Extract profile picture from og:image
-    const ogImage = await page.$eval('meta[property="og:image"]', el => el.getAttribute("content")).catch(() => "");
-    if (ogImage) {
-      profilePicture = ogImage;
-    }
-
-    await browser.close();
-  } catch (error) {
-    console.error("Puppeteer scraping failed, falling back to deterministic generation:", error);
-  }
 
   // Hash function for handle to generate deterministic values for missing data and mocks
   let hash = 0;
