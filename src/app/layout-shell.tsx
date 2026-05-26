@@ -71,7 +71,34 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         setUser(JSON.parse(saved));
       } catch (e) { }
     }
-  }, []);
+
+    // Sync session with backend in background
+    const token = localStorage.getItem("reelio_session_token");
+    if (token) {
+      fetch("/api/auth/session", {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+      .then(res => res.json() as any)
+      .then(data => {
+        if (data && data.success && data.data && data.data.user) {
+          const syncedUser = {
+            id: data.data.user.id,
+            name: data.data.user.name,
+            email: data.data.user.email,
+            role: data.data.user.role,
+            avatar: data.data.user.image || `https://api.dicebear.com/7.x/adventurer/svg?seed=${data.data.user.name}`,
+          };
+          setUser(syncedUser);
+          localStorage.setItem("reelio_mock_user", JSON.stringify(syncedUser));
+        } else {
+          // Token invalid or expired
+          localStorage.removeItem("reelio_session_token");
+          localStorage.removeItem("reelio_mock_user");
+        }
+      })
+      .catch(err => console.error("Session sync failed:", err));
+    }
+  }, [pathname]);
 
   const switchRole = (role: "influencer" | "brand" | "admin") => {
     let updatedUser: UserSession;
@@ -160,7 +187,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       items.push(
         { name: "Dashboard", href: "/influencer/dashboard", icon: Icons.Dashboard },
         { name: "Marketplace", href: "/marketplace", icon: Icons.Marketplace },
-        { name: "Calculators", href: "/calculators", icon: Icons.Calculator },
+        // { name: "Calculators", href: "/calculators", icon: Icons.Calculator },
         { name: "Messaging", href: "/chat", icon: Icons.Chat },
         { name: "Profile", href: "/influencer/profile", icon: Icons.Profile }
       );
@@ -171,9 +198,6 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         { name: "Messaging", href: "/chat", icon: Icons.Chat }
       );
     }
-
-    // All roles can access the Welcome landing page
-    items.push({ name: "Landing", href: "/", icon: Icons.Home });
     return items;
   };
 
@@ -225,51 +249,6 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
                 );
               })}
             </nav>
-          </div>
-
-          {/* Quick Role-Switcher Widget */}
-          <div className="mt-8 border-t border-slate-200 dark:border-slate-800/80 pt-6 space-y-4">
-            <div className="bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 p-3 rounded-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                </span>
-                <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">
-                  Active Sandbox Role
-                </span>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                {(["influencer", "brand", "admin"] as const).map(role => (
-                  <button
-                    key={role}
-                    onClick={() => switchRole(role)}
-                    className={`text-xs px-2.5 py-1.5 rounded-lg font-medium text-left transition-colors cursor-pointer capitalize flex items-center justify-between ${user.role === role
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/10"
-                      : "bg-slate-100 dark:bg-slate-950/65 text-slate-650 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-900"
-                      }`}
-                  >
-                    <span>{role} View</span>
-                    {user.role === role && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Profile Summary Footer */}
-            <div className="flex items-center gap-3 px-1.5">
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700/60"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{user.name}</p>
-                <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
-              </div>
-            </div>
           </div>
         </aside>
 
@@ -329,7 +308,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
 
               {/* Login Portal Access Button */}
               <Link
-                href="/auth"
+                href="/authentication"
                 className="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-600/15 transition-all cursor-pointer"
               >
                 Sign In Portal

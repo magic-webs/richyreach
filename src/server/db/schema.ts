@@ -52,6 +52,16 @@ export const verifications = sqliteTable("verifications", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
+export const otps = sqliteTable("otps", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  code: text("code").notNull(),
+  method: text("method").$type<"email" | "whatsapp">().notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+
 // ==========================================
 // 2. Profiles Tables
 // ==========================================

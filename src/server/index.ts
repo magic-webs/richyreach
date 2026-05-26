@@ -31,7 +31,6 @@ app.use("*", inputSanitizer());
 
 // Mount sub-routes
 const routes = app
-  .on(["GET", "POST"], "/auth/**", AuthController.handleAuth)
   .route("/users", usersApp)
   .route("/auth", authRouter)
   .route("/influencers", influencerRouter)
