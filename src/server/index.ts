@@ -8,6 +8,7 @@ import { securityHeaders, inputSanitizer } from "./middlewares/security";
 // Import Routes
 import usersApp from "./routes/users";
 import authRouter from "./routes/auth";
+import { AuthController } from "./controllers/auth.controller";
 import influencerRouter from "./routes/influencers";
 import brandRouter from "./routes/brands";
 import campaignRouter from "./routes/campaigns";
@@ -30,6 +31,7 @@ app.use("*", inputSanitizer());
 
 // Mount sub-routes
 const routes = app
+  .on(["GET", "POST"], "/auth/**", AuthController.handleAuth)
   .route("/users", usersApp)
   .route("/auth", authRouter)
   .route("/influencers", influencerRouter)

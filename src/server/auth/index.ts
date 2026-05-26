@@ -5,32 +5,25 @@ import * as schema from "../db/schema";
 
 export function getAuth(env: Record<string, any>) {
   const db = getDb(env);
-  
+
   return betterAuth({
     database: drizzleAdapter(db, {
       provider: "sqlite",
       schema: {
-        users: schema.users,
-        sessions: schema.sessions,
-        accounts: schema.accounts,
-        verifications: schema.verifications,
+        user: schema.users,
+        session: schema.sessions,
+        account: schema.accounts,
+        verification: schema.verifications,
       },
-      usePlural: true,
     }),
     emailAndPassword: {
       enabled: true,
+      minPasswordLength: 8,
     },
     socialProviders: {
       google: {
         clientId: env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || "google-client-id",
         clientSecret: env.GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET || "google-client-secret",
-      },
-    },
-    user: {
-      fields: {
-        emailVerified: "email_verified",
-        createdAt: "created_at",
-        updatedAt: "updated_at",
       },
     },
     // Required for cookie secure flags and callbacks in production
