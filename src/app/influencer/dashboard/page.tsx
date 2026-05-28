@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { GlassButton } from "@/components/ui/glass-button";
+import { GlassPurpleButton } from "@/components/ui/glass-purple-button";
 
 export default function InfluencerDashboardPage() {
   const { user } = useMockAuth();
@@ -91,12 +92,12 @@ export default function InfluencerDashboardPage() {
             Welcome to Richy Reach! To access your dashboard, track analytics, and apply for brand campaigns, sync your Instagram creator handle first.
           </p>
         </div>
-        <GlassButton
+        <GlassPurpleButton
           href="/influencer/profile"
-          variant="primary"
+          className="w-full"
         >
           Setup Profile & Sync Instagram
-        </GlassButton>
+        </GlassPurpleButton>
       </div>
     );
   }

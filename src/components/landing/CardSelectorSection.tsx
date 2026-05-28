@@ -10,6 +10,7 @@ import {
   CoinsIcon,
   SparklesIcon
 } from "./icons";
+import { GlassPurpleButton } from "@/components/ui/glass-purple-button";
 
 export function CardSelectorSection({ isDark }: { isDark: boolean }) {
   // 3D card tilt states
@@ -232,11 +233,9 @@ export function CardSelectorSection({ isDark }: { isDark: boolean }) {
           </div>
 
           <div className="pt-8 relative z-10">
-            <Link href="/authentication?role=influencer">
-              <button className="btn-glass-purple w-full py-4 rounded-2xl font-extrabold text-sm text-white cursor-pointer border-none flex items-center justify-center gap-2">
-                Enter Creator Suite <ArrowUpRightIcon size={16} />
-              </button>
-            </Link>
+            <GlassPurpleButton href="/authentication?role=influencer" className="w-full">
+              Enter Creator Suite <ArrowUpRightIcon size={16} />
+            </GlassPurpleButton>
           </div>
         </div>
 

@@ -73,9 +73,17 @@ export const influencerProfiles = sqliteTable("influencer_profiles", {
   engagementRate: real("engagement_rate").notNull().default(0),
   niche: text("niche").notNull(),
   avgViews: integer("avg_views").notNull().default(0),
+  avgLikes: integer("avg_likes").notNull().default(0),
   pricing: integer("pricing").notNull().default(0), // Price per post/reel in USD cents
   verified: integer("verified", { mode: "boolean" }).notNull().default(false),
   level: text("level").$type<"nano" | "micro" | "mid" | "macro" | "mega">().notNull().default("nano"),
+  // Extended fields
+  reachScore: real("reach_score").notNull().default(0), // 0-100 computed score
+  country: text("country"),
+  socialLinks: text("social_links"), // JSON: { twitter, tiktok, youtube, website }
+  audienceDemographics: text("audience_demographics"), // JSON: { ageGroups, genders, topCountries }
+  postingFrequency: real("posting_frequency").notNull().default(0), // posts per week
+  growthRate: real("growth_rate").notNull().default(0), // % monthly
 });
 
 export const brandProfiles = sqliteTable("brand_profiles", {
@@ -85,6 +93,12 @@ export const brandProfiles = sqliteTable("brand_profiles", {
   logo: text("logo"),
   category: text("category").notNull(),
   description: text("description"),
+  // Extended fields
+  instagramPage: text("instagram_page"),
+  brandSize: text("brand_size").$type<"startup" | "smb" | "enterprise">().default("smb"),
+  budgetRange: text("budget_range").$type<"low" | "mid" | "high" | "enterprise">().default("mid"),
+  socialLinks: text("social_links"), // JSON: { twitter, linkedin, tiktok }
+  verified: integer("verified", { mode: "boolean" }).notNull().default(false),
 });
 
 export const creatorSkills = sqliteTable("creator_skills", {
@@ -100,6 +114,36 @@ export const creatorPortfolio = sqliteTable("creator_portfolio", {
   mediaType: text("media_type").$type<"image" | "video">().notNull(),
   title: text("title"),
   description: text("description"),
+});
+
+// ==========================================
+// 2b. New Profile Support Tables
+// ==========================================
+
+export const reachScores = sqliteTable("reach_scores", {
+  id: text("id").primaryKey(),
+  influencerId: text("influencer_id").notNull().references(() => influencerProfiles.userId, { onDelete: "cascade" }),
+  score: real("score").notNull(),
+  // JSON breakdown: { followers, engagement, consistency, audienceQuality, growth, recentPerformance }
+  breakdown: text("breakdown"),
+  recordedAt: integer("recorded_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+export const savedInfluencers = sqliteTable("saved_influencers", {
+  id: text("id").primaryKey(),
+  brandId: text("brand_id").notNull().references(() => brandProfiles.userId, { onDelete: "cascade" }),
+  influencerId: text("influencer_id").notNull().references(() => influencerProfiles.userId, { onDelete: "cascade" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+export const audienceData = sqliteTable("audience_data", {
+  id: text("id").primaryKey(),
+  influencerId: text("influencer_id").notNull().references(() => influencerProfiles.userId, { onDelete: "cascade" }),
+  ageGroup: text("age_group").notNull(), // e.g. "18-24", "25-34"
+  percentage: real("percentage").notNull(),
+  gender: text("gender"), // "male" | "female" | "other"
+  country: text("country"),
+  recordedAt: integer("recorded_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
 // ==========================================
@@ -272,6 +316,9 @@ export const influencerProfilesRelations = relations(influencerProfiles, ({ one,
   earnings: many(earnings),
   chatRooms: many(chatRooms),
   tasks: many(tasks),
+  reachScores: many(reachScores),
+  audienceData: many(audienceData),
+  savedByBrands: many(savedInfluencers),
 }));
 
 export const brandProfilesRelations = relations(brandProfiles, ({ one, many }) => ({
@@ -282,6 +329,7 @@ export const brandProfilesRelations = relations(brandProfiles, ({ one, many }) =
   campaigns: many(campaigns),
   invites: many(campaignInvites),
   chatRooms: many(chatRooms),
+  savedInfluencers: many(savedInfluencers),
 }));
 
 export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
@@ -295,9 +343,10 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
   payments: many(payments),
   contracts: many(contracts),
   reviews: many(reviews),
+  savedBy: many(savedCampaigns),
 }));
 
-export const campaignApplicationsRelations = relations(campaignApplications, ({ one, many }) => ({
+export const campaignApplicationsRelations = relations(campaignApplications, ({ one }) => ({
   influencer: one(influencerProfiles, {
     fields: [campaignApplications.influencerId],
     references: [influencerProfiles.userId],
@@ -368,5 +417,41 @@ export const notificationRelations = relations(notifications, ({ one }) => ({
   user: one(users, {
     fields: [notifications.userId],
     references: [users.id],
+  }),
+}));
+
+export const reachScoresRelations = relations(reachScores, ({ one }) => ({
+  influencer: one(influencerProfiles, {
+    fields: [reachScores.influencerId],
+    references: [influencerProfiles.userId],
+  }),
+}));
+
+export const savedInfluencersRelations = relations(savedInfluencers, ({ one }) => ({
+  brand: one(brandProfiles, {
+    fields: [savedInfluencers.brandId],
+    references: [brandProfiles.userId],
+  }),
+  influencer: one(influencerProfiles, {
+    fields: [savedInfluencers.influencerId],
+    references: [influencerProfiles.userId],
+  }),
+}));
+
+export const audienceDataRelations = relations(audienceData, ({ one }) => ({
+  influencer: one(influencerProfiles, {
+    fields: [audienceData.influencerId],
+    references: [influencerProfiles.userId],
+  }),
+}));
+
+export const savedCampaignsRelations = relations(savedCampaigns, ({ one }) => ({
+  influencer: one(influencerProfiles, {
+    fields: [savedCampaigns.influencerId],
+    references: [influencerProfiles.userId],
+  }),
+  campaign: one(campaigns, {
+    fields: [savedCampaigns.campaignId],
+    references: [campaigns.id],
   }),
 }));

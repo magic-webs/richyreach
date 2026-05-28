@@ -6,18 +6,42 @@ import { rateLimiter } from "../middlewares/rateLimiter";
 import { HonoEnv } from "../types";
 
 const influencerRouter = new Hono<HonoEnv>()
+  // ── Public ──────────────────────────────────────────────────────
   .get("/", rateLimiter({ windowMs: 60000, max: 60 }), InfluencerController.getInfluencers)
-  .get("/:id", InfluencerController.getInfluencerById)
-  
-  // Protected influencer-only routes
-  .use("*", requireAuth())
-  .use("*", requireRole(["influencer"]))
-  .post("/profile", InfluencerController.createOrUpdateProfile)
-  .put("/profile", InfluencerController.createOrUpdateProfile)
-  .get("/dashboard", InfluencerController.getDashboard)
-  .get("/campaigns", InfluencerController.getCampaigns)
-  .post("/apply/:campaignId", InfluencerController.applyCampaign)
-  .get("/earnings", InfluencerController.getEarnings)
-  .get("/analytics", InfluencerController.getAnalytics);
+
+  // ── Auth required (any role can browse influencer marketplace data)
+  .use("/marketplace-campaigns", requireAuth())
+  .get("/marketplace-campaigns", requireRole(["influencer"]), InfluencerController.getMarketplaceCampaigns)
+
+  .use("/saved-campaigns", requireAuth())
+  .get("/saved-campaigns", requireRole(["influencer"]), InfluencerController.getSavedCampaigns)
+
+  .use("/save-campaign", requireAuth())
+  .post("/save-campaign", requireRole(["influencer"]), InfluencerController.saveCampaign)
+  .delete("/save-campaign/:campaignId", requireAuth(), requireRole(["influencer"]), InfluencerController.unsaveCampaign)
+
+  // ── Influencer-only routes ───────────────────────────────────────
+  .use("/profile", requireAuth())
+  .post("/profile", requireRole(["influencer"]), InfluencerController.createOrUpdateProfile)
+  .put("/profile", requireRole(["influencer"]), InfluencerController.createOrUpdateProfile)
+
+  .use("/dashboard", requireAuth())
+  .get("/dashboard", requireRole(["influencer"]), InfluencerController.getDashboard)
+
+  .use("/campaigns", requireAuth())
+  .get("/campaigns", requireRole(["influencer"]), InfluencerController.getCampaigns)
+
+  .use("/apply/:campaignId", requireAuth())
+  .post("/apply/:campaignId", requireRole(["influencer"]), InfluencerController.applyCampaign)
+
+  .use("/earnings", requireAuth())
+  .get("/earnings", requireRole(["influencer"]), InfluencerController.getEarnings)
+
+  .use("/analytics", requireAuth())
+  .get("/analytics", requireRole(["influencer"]), InfluencerController.getAnalytics)
+
+  // ── Public profile lookup by id (brand needs this for marketplace) ─
+  // Keep this LAST — wildcard /:id must come after all named paths
+  .get("/:id", InfluencerController.getInfluencerById);
 
 export default influencerRouter;

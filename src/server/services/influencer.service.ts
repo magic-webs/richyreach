@@ -3,6 +3,51 @@ import { getDb } from "../db";
 import * as schema from "../db/schema";
 import { fetchInstagramProfile } from "../utils/instagram-api";
 
+// ==========================================
+// Reach Score Calculator (6-factor model)
+// ==========================================
+function calculateReachScore(profile: {
+  followers: number;
+  engagementRate: number;
+  postingFrequency: number;
+  growthRate: number;
+  avgViews: number;
+  avgLikes: number;
+}): { score: number; breakdown: Record<string, number> } {
+  // Factor 1: Followers (20%) — log-normalized to 10M ceiling
+  const followersScore = Math.min(100, (Math.log10(profile.followers + 1) / Math.log10(10_000_000)) * 100) * 0.20;
+
+  // Factor 2: Engagement Rate (25%) — ideal is 3-10%
+  const engagementScore = Math.min(100, (Math.min(profile.engagementRate, 10) / 10) * 100) * 0.25;
+
+  // Factor 3: Consistency / Posting Frequency (15%) — ideal is 7 posts/week
+  const consistencyScore = Math.min(100, (Math.min(profile.postingFrequency, 7) / 7) * 100) * 0.15;
+
+  // Factor 4: Audience Quality Estimate (15%) — avg likes relative to followers
+  const rawAudienceQual = profile.followers > 0 ? Math.min((profile.avgLikes / profile.followers) * 1000, 100) : 0;
+  const audienceQualityScore = rawAudienceQual * 0.15;
+
+  // Factor 5: Growth Rate (10%)
+  const growthScore = Math.min(100, (Math.min(profile.growthRate, 20) / 20) * 100) * 0.10;
+
+  // Factor 6: Recent Performance / Avg Views (15%)
+  const viewsScore = Math.min(100, (Math.log10(profile.avgViews + 1) / Math.log10(1_000_000)) * 100) * 0.15;
+
+  const total = Math.round(followersScore + engagementScore + consistencyScore + audienceQualityScore + growthScore + viewsScore);
+
+  return {
+    score: Math.min(100, total),
+    breakdown: {
+      followers: Math.round(followersScore / 0.20),
+      engagement: Math.round(engagementScore / 0.25),
+      consistency: Math.round(consistencyScore / 0.15),
+      audienceQuality: rawAudienceQual > 0 ? Math.round(rawAudienceQual) : 0,
+      growth: Math.round(growthScore / 0.10),
+      recentPerformance: Math.round(viewsScore / 0.15),
+    },
+  };
+}
+
 export class InfluencerService {
   static async getInfluencers(
     env: Record<string, any>,
@@ -11,6 +56,8 @@ export class InfluencerService {
       level?: "nano" | "micro" | "mid" | "macro" | "mega";
       minFollowers?: number;
       maxPricing?: number;
+      minReachScore?: number;
+      country?: string;
       search?: string;
       limit?: number;
       offset?: number;
@@ -34,9 +81,14 @@ export class InfluencerService {
     if (filters.maxPricing) {
       conditions.push(lte(schema.influencerProfiles.pricing, filters.maxPricing));
     }
-    
-    // Add user name search if specified
-    let query = db
+    if (filters.minReachScore) {
+      conditions.push(gte(schema.influencerProfiles.reachScore, filters.minReachScore));
+    }
+    if (filters.country) {
+      conditions.push(eq(schema.influencerProfiles.country, filters.country));
+    }
+
+    const query = db
       .select({
         id: schema.users.id,
         name: schema.users.name,
@@ -48,9 +100,14 @@ export class InfluencerService {
         engagementRate: schema.influencerProfiles.engagementRate,
         niche: schema.influencerProfiles.niche,
         avgViews: schema.influencerProfiles.avgViews,
+        avgLikes: schema.influencerProfiles.avgLikes,
         pricing: schema.influencerProfiles.pricing,
         verified: schema.influencerProfiles.verified,
         level: schema.influencerProfiles.level,
+        reachScore: schema.influencerProfiles.reachScore,
+        country: schema.influencerProfiles.country,
+        postingFrequency: schema.influencerProfiles.postingFrequency,
+        growthRate: schema.influencerProfiles.growthRate,
       })
       .from(schema.influencerProfiles)
       .innerJoin(schema.users, eq(schema.influencerProfiles.userId, schema.users.id));
@@ -62,7 +119,7 @@ export class InfluencerService {
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    
+
     const countResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(schema.influencerProfiles)
@@ -75,12 +132,9 @@ export class InfluencerService {
       .where(whereClause)
       .limit(limit)
       .offset(offset)
-      .orderBy(desc(schema.influencerProfiles.followers));
+      .orderBy(desc(schema.influencerProfiles.reachScore));
 
-    return {
-      items,
-      total,
-    };
+    return { items, total };
   }
 
   static async getInfluencerById(env: Record<string, any>, userId: string) {
@@ -98,9 +152,16 @@ export class InfluencerService {
         engagementRate: schema.influencerProfiles.engagementRate,
         niche: schema.influencerProfiles.niche,
         avgViews: schema.influencerProfiles.avgViews,
+        avgLikes: schema.influencerProfiles.avgLikes,
         pricing: schema.influencerProfiles.pricing,
         verified: schema.influencerProfiles.verified,
         level: schema.influencerProfiles.level,
+        reachScore: schema.influencerProfiles.reachScore,
+        country: schema.influencerProfiles.country,
+        socialLinks: schema.influencerProfiles.socialLinks,
+        audienceDemographics: schema.influencerProfiles.audienceDemographics,
+        postingFrequency: schema.influencerProfiles.postingFrequency,
+        growthRate: schema.influencerProfiles.growthRate,
       })
       .from(schema.influencerProfiles)
       .innerJoin(schema.users, eq(schema.influencerProfiles.userId, schema.users.id))
@@ -119,8 +180,27 @@ export class InfluencerService {
       .from(schema.creatorPortfolio)
       .where(eq(schema.creatorPortfolio.influencerId, userId));
 
+    // Parse JSON fields safely
+    let socialLinks: any = {};
+    let audienceDemographics: any = null;
+    try { if (profile.socialLinks) socialLinks = JSON.parse(profile.socialLinks); } catch (_) {}
+    try { if (profile.audienceDemographics) audienceDemographics = JSON.parse(profile.audienceDemographics); } catch (_) {}
+
+    // Compute reach score breakdown for display
+    const { breakdown } = calculateReachScore({
+      followers: profile.followers,
+      engagementRate: profile.engagementRate,
+      postingFrequency: profile.postingFrequency || 0,
+      growthRate: profile.growthRate || 0,
+      avgViews: profile.avgViews,
+      avgLikes: profile.avgLikes || 0,
+    });
+
     return {
       ...profile,
+      socialLinks,
+      audienceDemographics,
+      reachScoreBreakdown: breakdown,
       skills: skills.map((s) => s.skill),
       portfolio,
     };
@@ -134,6 +214,8 @@ export class InfluencerService {
       pricing: number;
       niche: string;
       skills?: string[];
+      country?: string;
+      socialLinks?: Record<string, string>;
       portfolioItems?: {
         mediaUrl: string;
         mediaType: "image" | "video";
@@ -147,32 +229,64 @@ export class InfluencerService {
     // 1. Fetch Instagram data using helper
     const instaData = await fetchInstagramProfile(profileData.instagramHandle);
 
-    // 2. Upsert profile details
+    // 1.5 Check if instagram handle is already used by another user
+    const existingHandle = await db
+      .select()
+      .from(schema.influencerProfiles)
+      .where(eq(schema.influencerProfiles.instagramHandle, instaData.instagramHandle))
+      .get();
+      
+    if (existingHandle && existingHandle.userId !== userId) {
+      throw new Error("This Instagram handle is already linked to another account.");
+    }
+
+    // 2. Compute Reach Score
+    const postingFrequency = (instaData as any).postingFrequency || 4;
+    const growthRate = (instaData as any).growthRate || 2.5;
+    const avgLikes = Math.round(instaData.followers * (instaData.engagementRate / 100) * 0.6);
+    const { score: reachScore, breakdown } = calculateReachScore({
+      followers: instaData.followers,
+      engagementRate: instaData.engagementRate,
+      postingFrequency,
+      growthRate,
+      avgViews: instaData.avgViews,
+      avgLikes,
+    });
+
+    // 3. Upsert profile details
+    const profileRecord = {
+      userId,
+      instagramHandle: instaData.instagramHandle,
+      followers: instaData.followers,
+      engagementRate: instaData.engagementRate,
+      niche: profileData.niche || instaData.niche,
+      avgViews: instaData.avgViews,
+      avgLikes,
+      pricing: profileData.pricing,
+      verified: false,
+      level: instaData.level,
+      reachScore,
+      country: profileData.country || "India",
+      postingFrequency,
+      growthRate,
+      socialLinks: profileData.socialLinks ? JSON.stringify(profileData.socialLinks) : null,
+    };
+
     await db
       .insert(schema.influencerProfiles)
-      .values({
-        userId,
-        instagramHandle: instaData.instagramHandle,
-        followers: instaData.followers,
-        engagementRate: instaData.engagementRate,
-        niche: profileData.niche || instaData.niche,
-        avgViews: instaData.avgViews,
-        pricing: profileData.pricing,
-        verified: false,
-        level: instaData.level,
-      })
+      .values(profileRecord)
       .onConflictDoUpdate({
         target: schema.influencerProfiles.userId,
-        set: {
-          instagramHandle: instaData.instagramHandle,
-          followers: instaData.followers,
-          engagementRate: instaData.engagementRate,
-          niche: profileData.niche || instaData.niche,
-          avgViews: instaData.avgViews,
-          pricing: profileData.pricing,
-          level: instaData.level,
-        },
+        set: profileRecord,
       });
+
+    // Save reach score history
+    await db.insert(schema.reachScores).values({
+      id: crypto.randomUUID(),
+      influencerId: userId,
+      score: reachScore,
+      breakdown: JSON.stringify(breakdown),
+    });
 
     // Update main user bio & avatar
     await db
@@ -183,7 +297,7 @@ export class InfluencerService {
       })
       .where(eq(schema.users.id, userId));
 
-    // 3. Upsert skills if provided
+    // 4. Upsert skills if provided
     if (profileData.skills) {
       await db.delete(schema.creatorSkills).where(eq(schema.creatorSkills.influencerId, userId));
       if (profileData.skills.length > 0) {
@@ -197,7 +311,7 @@ export class InfluencerService {
       }
     }
 
-    // 4. Upsert portfolio items if provided
+    // 5. Portfolio items
     if (profileData.portfolioItems) {
       await db.delete(schema.creatorPortfolio).where(eq(schema.creatorPortfolio.influencerId, userId));
       if (profileData.portfolioItems.length > 0) {
@@ -213,7 +327,6 @@ export class InfluencerService {
         );
       }
     } else {
-      // populate with mock portfolio from scraped posts
       await db.delete(schema.creatorPortfolio).where(eq(schema.creatorPortfolio.influencerId, userId));
       await db.insert(schema.creatorPortfolio).values(
         instaData.recentPosts.map((post) => ({
@@ -230,6 +343,126 @@ export class InfluencerService {
     return this.getInfluencerById(env, userId);
   }
 
+  // ==========================================
+  // Marketplace — Campaigns for Influencers
+  // ==========================================
+  static async getMarketplaceCampaigns(
+    env: Record<string, any>,
+    influencerId: string,
+    filters: {
+      category?: string;
+      campaignType?: string;
+      search?: string;
+      limit?: number;
+      offset?: number;
+    }
+  ) {
+    const db = getDb(env);
+    const limit = filters.limit || 20;
+    const offset = filters.offset || 0;
+
+    const campaigns = await db
+      .select({
+        id: schema.campaigns.id,
+        title: schema.campaigns.title,
+        description: schema.campaigns.description,
+        budget: schema.campaigns.budget,
+        campaignType: schema.campaigns.campaignType,
+        targetAudience: schema.campaigns.targetAudience,
+        requirements: schema.campaigns.requirements,
+        status: schema.campaigns.status,
+        expectedReach: schema.campaigns.expectedReach,
+        createdAt: schema.campaigns.createdAt,
+        brandId: schema.brandProfiles.userId,
+        brandName: schema.brandProfiles.companyName,
+        brandLogo: schema.brandProfiles.logo,
+        brandCategory: schema.brandProfiles.category,
+      })
+      .from(schema.campaigns)
+      .innerJoin(schema.brandProfiles, eq(schema.campaigns.brandId, schema.brandProfiles.userId))
+      .where(eq(schema.campaigns.status, "active"))
+      .orderBy(desc(schema.campaigns.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const applications = await db
+      .select({ campaignId: schema.campaignApplications.campaignId })
+      .from(schema.campaignApplications)
+      .where(eq(schema.campaignApplications.influencerId, influencerId));
+
+    const saved = await db
+      .select({ campaignId: schema.savedCampaigns.campaignId })
+      .from(schema.savedCampaigns)
+      .where(eq(schema.savedCampaigns.influencerId, influencerId));
+
+    const invites = await db
+      .select({ campaignId: schema.campaignInvites.campaignId })
+      .from(schema.campaignInvites)
+      .where(eq(schema.campaignInvites.influencerId, influencerId));
+
+    const appliedIds = new Set(applications.map((a) => a.campaignId));
+    const savedIds = new Set(saved.map((s) => s.campaignId));
+    const invitedIds = new Set(invites.map((i) => i.campaignId));
+
+    const influencerProfile = await db
+      .select()
+      .from(schema.influencerProfiles)
+      .where(eq(schema.influencerProfiles.userId, influencerId))
+      .get();
+
+    return campaigns.map((c) => ({
+      ...c,
+      isApplied: appliedIds.has(c.id),
+      isSaved: savedIds.has(c.id),
+      isInvited: invitedIds.has(c.id),
+      isRecommended: influencerProfile
+        ? (c.brandCategory?.toLowerCase() || "").includes((influencerProfile.niche || "").toLowerCase()) ||
+          (c.budget >= 50000 && (influencerProfile.reachScore || 0) > 50)
+        : false,
+    }));
+  }
+
+  static async saveCampaign(env: Record<string, any>, influencerId: string, campaignId: string) {
+    const db = getDb(env);
+    const existing = await db
+      .select()
+      .from(schema.savedCampaigns)
+      .where(and(eq(schema.savedCampaigns.influencerId, influencerId), eq(schema.savedCampaigns.campaignId, campaignId)))
+      .get();
+    if (existing) return { alreadySaved: true };
+    const id = crypto.randomUUID();
+    await db.insert(schema.savedCampaigns).values({ id, influencerId, campaignId });
+    return { id, influencerId, campaignId };
+  }
+
+  static async unsaveCampaign(env: Record<string, any>, influencerId: string, campaignId: string) {
+    const db = getDb(env);
+    await db
+      .delete(schema.savedCampaigns)
+      .where(and(eq(schema.savedCampaigns.influencerId, influencerId), eq(schema.savedCampaigns.campaignId, campaignId)));
+    return { success: true };
+  }
+
+  static async getSavedCampaigns(env: Record<string, any>, influencerId: string) {
+    const db = getDb(env);
+    return db
+      .select({
+        savedId: schema.savedCampaigns.id,
+        id: schema.campaigns.id,
+        title: schema.campaigns.title,
+        budget: schema.campaigns.budget,
+        campaignType: schema.campaigns.campaignType,
+        status: schema.campaigns.status,
+        createdAt: schema.campaigns.createdAt,
+        brandName: schema.brandProfiles.companyName,
+        brandLogo: schema.brandProfiles.logo,
+      })
+      .from(schema.savedCampaigns)
+      .innerJoin(schema.campaigns, eq(schema.savedCampaigns.campaignId, schema.campaigns.id))
+      .innerJoin(schema.brandProfiles, eq(schema.campaigns.brandId, schema.brandProfiles.userId))
+      .where(eq(schema.savedCampaigns.influencerId, influencerId));
+  }
+
   static async applyToCampaign(
     env: Record<string, any>,
     influencerId: string,
@@ -238,7 +471,6 @@ export class InfluencerService {
   ) {
     const db = getDb(env);
 
-    // Verify campaign exists
     const campaign = await db
       .select()
       .from(schema.campaigns)
@@ -259,10 +491,9 @@ export class InfluencerService {
 
     await db.insert(schema.campaignApplications).values(application);
 
-    // Trigger Notification for Brand
     await db.insert(schema.notifications).values({
       id: crypto.randomUUID(),
-      userId: campaign.brandId, // Send to brand
+      userId: campaign.brandId,
       title: "New Campaign Application",
       message: `An influencer applied to your campaign "${campaign.title}"`,
       read: false,
@@ -286,9 +517,12 @@ export class InfluencerService {
         campaignDescription: schema.campaigns.description,
         budget: schema.campaigns.budget,
         statusCampaign: schema.campaigns.status,
+        brandName: schema.brandProfiles.companyName,
+        brandLogo: schema.brandProfiles.logo,
       })
       .from(schema.campaignApplications)
       .innerJoin(schema.campaigns, eq(schema.campaignApplications.campaignId, schema.campaigns.id))
+      .innerJoin(schema.brandProfiles, eq(schema.campaigns.brandId, schema.brandProfiles.userId))
       .where(eq(schema.campaignApplications.influencerId, influencerId));
 
     const invites = await db
@@ -300,42 +534,38 @@ export class InfluencerService {
         campaignTitle: schema.campaigns.title,
         campaignDescription: schema.campaigns.description,
         budget: schema.campaigns.budget,
+        brandName: schema.brandProfiles.companyName,
+        brandLogo: schema.brandProfiles.logo,
       })
       .from(schema.campaignInvites)
       .innerJoin(schema.campaigns, eq(schema.campaignInvites.campaignId, schema.campaigns.id))
+      .innerJoin(schema.brandProfiles, eq(schema.campaigns.brandId, schema.brandProfiles.userId))
       .where(eq(schema.campaignInvites.influencerId, influencerId));
 
-    return {
-      applications,
-      invites,
-    };
+    return { applications, invites };
   }
 
   static async getDashboardData(env: Record<string, any>, userId: string) {
     const db = getDb(env);
 
-    // 1. Total Earnings (cleared)
     const earningsSum = await db
       .select({ total: sql<number>`sum(${schema.earnings.amount})` })
       .from(schema.earnings)
       .where(and(eq(schema.earnings.influencerId, userId), eq(schema.earnings.status, "cleared")))
       .get();
-    
-    // 2. Active Campaigns
+
     const activeCampaigns = await db
       .select({ count: sql<number>`count(*)` })
       .from(schema.campaignApplications)
       .where(and(eq(schema.campaignApplications.influencerId, userId), eq(schema.campaignApplications.status, "accepted")))
       .get();
 
-    // 3. Pending Applications
     const pendingApps = await db
       .select({ count: sql<number>`count(*)` })
       .from(schema.campaignApplications)
       .where(and(eq(schema.campaignApplications.influencerId, userId), eq(schema.campaignApplications.status, "pending")))
       .get();
 
-    // 4. Analytics overview (Mock or derived from logs)
     const reach = await db
       .select({ total: sql<number>`sum(${schema.analytics.metricValue})` })
       .from(schema.analytics)

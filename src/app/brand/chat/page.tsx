@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { useMockAuth } from "../layout-shell";
+import { useMockAuth } from "../../layout-shell";
 import { api } from "@/lib/api-client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { GlassButton } from "@/components/ui/glass-button";
 
@@ -13,7 +12,7 @@ export default function ChatPage() {
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  
+
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
@@ -141,7 +140,7 @@ export default function ChatPage() {
             rooms.map((room) => {
               const isSelected = selectedRoom?.roomId === room.roomId;
               // Extract details based on active role
-              const avatar = user.role === "influencer" 
+              const avatar = user.role === "influencer"
                 ? (room.logo || `https://api.dicebear.com/7.x/initials/svg?seed=${room.companyName}`)
                 : (room.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${room.name}`);
               const title = user.role === "influencer" ? room.companyName : room.name;
@@ -151,11 +150,10 @@ export default function ChatPage() {
                 <div
                   key={room.roomId}
                   onClick={() => handleRoomSelect(room)}
-                  className={`p-3 rounded-2xl flex items-center gap-3 cursor-pointer transition-all border ${
-                    isSelected
-                      ? "bg-primary/10 border-primary/30 text-primary dark:text-white"
-                      : "bg-slate-50/50 dark:bg-slate-950/20 border-slate-100 dark:border-slate-800/40 text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-900/40 hover:text-slate-900 dark:hover:text-slate-200"
-                  }`}
+                  className={`p-3 rounded-2xl flex items-center gap-3 cursor-pointer transition-all border ${isSelected
+                    ? "bg-primary/10 border-primary/30 text-primary dark:text-white"
+                    : "bg-slate-50/50 dark:bg-slate-950/20 border-slate-100 dark:border-slate-800/40 text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-900/40 hover:text-slate-900 dark:hover:text-slate-200"
+                    }`}
                 >
                   <img
                     src={avatar}
@@ -228,7 +226,7 @@ export default function ChatPage() {
                 messages.map((msg) => {
                   // Determine sender alignment. The mock auth check can match either real or mock tokens
                   const isMe = msg.senderId === user.id || msg.senderId.startsWith(`mock_${user.role}`);
-                  
+
                   return (
                     <div
                       key={msg.id}
@@ -243,11 +241,10 @@ export default function ChatPage() {
                       )}
                       <div>
                         <div
-                          className={`p-3.5 rounded-2xl text-xs leading-relaxed ${
-                            isMe
-                              ? "bg-primary text-white rounded-br-none shadow-md shadow-primary/10"
-                              : "bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 text-slate-850 dark:text-slate-300 rounded-bl-none"
-                          }`}
+                          className={`p-3.5 rounded-2xl text-xs leading-relaxed ${isMe
+                            ? "bg-primary text-white rounded-br-none shadow-md shadow-primary/10"
+                            : "bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 text-slate-850 dark:text-slate-300 rounded-bl-none"
+                            }`}
                         >
                           {msg.content}
                         </div>

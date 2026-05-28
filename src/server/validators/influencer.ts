@@ -8,6 +8,8 @@ export const influencerProfileSchema = z.object({
   avgViews: z.number().int().nonnegative().optional(),
   pricing: z.number().int().nonnegative("Pricing must be positive (in cents)"),
   skills: z.array(z.string()).optional(),
+  country: z.string().optional(),
+  socialLinks: z.record(z.string(), z.string()).optional(),
   portfolioItems: z.array(
     z.object({
       mediaUrl: z.string().url("Invalid media URL"),
@@ -17,6 +19,7 @@ export const influencerProfileSchema = z.object({
     })
   ).optional(),
 });
+
 
 export const applyCampaignSchema = z.object({
   proposal: z.string().min(10, "Proposal must be at least 10 characters"),

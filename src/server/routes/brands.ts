@@ -10,6 +10,10 @@ const brandRouter = new Hono<HonoEnv>()
   .post("/profile", BrandController.createOrUpdateProfile)
   .put("/profile", BrandController.createOrUpdateProfile)
   .get("/profile", BrandController.getProfile)
-  .get("/dashboard", BrandController.getDashboard);
+  .get("/dashboard", BrandController.getDashboard)
+  // Saved influencers
+  .get("/saved-influencers", BrandController.getSavedInfluencers)
+  .post("/save-influencer", BrandController.saveInfluencer)
+  .delete("/save-influencer/:influencerId", BrandController.unsaveInfluencer);
 
 export default brandRouter;

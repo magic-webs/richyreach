@@ -144,4 +144,59 @@ export class InfluencerController {
       return sendError(c, error.message || "Failed to load analytics", 500);
     }
   }
+
+  static async getMarketplaceCampaigns(c: Context<HonoEnv>) {
+    try {
+      const user = c.get("user");
+      if (!user) return sendError(c, "Unauthorized", 401);
+
+      const q = c.req.query();
+      const campaigns = await InfluencerService.getMarketplaceCampaigns(c.env, user.id, {
+        category: q.category,
+        campaignType: q.campaignType,
+        search: q.search,
+        limit: q.limit ? parseInt(q.limit, 10) : 20,
+        offset: q.offset ? parseInt(q.offset, 10) : 0,
+      });
+      return sendSuccess(c, campaigns, "Marketplace campaigns fetched");
+    } catch (error: any) {
+      return sendError(c, error.message || "Failed to fetch campaigns", 500);
+    }
+  }
+
+  static async saveCampaign(c: Context<HonoEnv>) {
+    try {
+      const user = c.get("user");
+      if (!user) return sendError(c, "Unauthorized", 401);
+      const body = await c.req.json();
+      const result = await InfluencerService.saveCampaign(c.env, user.id, body.campaignId);
+      return sendSuccess(c, result, "Campaign saved");
+    } catch (error: any) {
+      return sendError(c, error.message || "Failed to save campaign", 500);
+    }
+  }
+
+  static async unsaveCampaign(c: Context<HonoEnv>) {
+    try {
+      const user = c.get("user");
+      if (!user) return sendError(c, "Unauthorized", 401);
+      const campaignId = c.req.param("campaignId");
+      const result = await InfluencerService.unsaveCampaign(c.env, user.id, campaignId);
+      return sendSuccess(c, result, "Campaign unsaved");
+    } catch (error: any) {
+      return sendError(c, error.message || "Failed to unsave campaign", 500);
+    }
+  }
+
+  static async getSavedCampaigns(c: Context<HonoEnv>) {
+    try {
+      const user = c.get("user");
+      if (!user) return sendError(c, "Unauthorized", 401);
+      const data = await InfluencerService.getSavedCampaigns(c.env, user.id);
+      return sendSuccess(c, data, "Saved campaigns retrieved");
+    } catch (error: any) {
+      return sendError(c, error.message || "Failed to fetch saved campaigns", 500);
+    }
+  }
 }
+

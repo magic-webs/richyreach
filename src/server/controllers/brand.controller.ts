@@ -140,4 +140,40 @@ export class BrandController {
       return sendError(c, error.message || "Failed to invite influencer", 500);
     }
   }
+
+  static async saveInfluencer(c: Context<HonoEnv>) {
+    try {
+      const user = c.get("user");
+      if (!user) return sendError(c, "Unauthorized", 401);
+      const body = await c.req.json();
+      const result = await BrandService.saveInfluencer(c.env, user.id, body.influencerId);
+      return sendSuccess(c, result, "Influencer saved");
+    } catch (error: any) {
+      return sendError(c, error.message || "Failed to save influencer", 500);
+    }
+  }
+
+  static async unsaveInfluencer(c: Context<HonoEnv>) {
+    try {
+      const user = c.get("user");
+      if (!user) return sendError(c, "Unauthorized", 401);
+      const influencerId = c.req.param("influencerId");
+      const result = await BrandService.unsaveInfluencer(c.env, user.id, influencerId);
+      return sendSuccess(c, result, "Influencer unsaved");
+    } catch (error: any) {
+      return sendError(c, error.message || "Failed to unsave influencer", 500);
+    }
+  }
+
+  static async getSavedInfluencers(c: Context<HonoEnv>) {
+    try {
+      const user = c.get("user");
+      if (!user) return sendError(c, "Unauthorized", 401);
+      const data = await BrandService.getSavedInfluencers(c.env, user.id);
+      return sendSuccess(c, data, "Saved influencers retrieved");
+    } catch (error: any) {
+      return sendError(c, error.message || "Failed to fetch saved influencers", 500);
+    }
+  }
 }
+

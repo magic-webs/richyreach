@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Icons from "@/components/icons";
 
 // Define mock session types
 interface UserSession {
@@ -160,16 +161,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // Custom Inline SVG Icons to avoid import breaks
-  const Icons = {
-    Home: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
-    Marketplace: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
-    Dashboard: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
-    Calculator: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 11h.01M12 7h.01M9 11h.01M12 14h.01M15 11h.01M15 7h.01M5 19V5a2 2 0 012-2h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2z" /></svg>,
-    Chat: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
-    Profile: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
-    Admin: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
-    Settings: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  };
+
 
   // Dynamic role-based navigation item filtering
   const getRoleNavItems = () => {
@@ -178,24 +170,24 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       items.push(
         { name: "Dashboard", href: "/brand/dashboard", icon: Icons.Dashboard },
         { name: "Campaigns", href: "/brand/campaigns/create", icon: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
-        { name: "Marketplace", href: "/marketplace", icon: Icons.Marketplace },
+        { name: "Marketplace", href: "/brand/marketplace", icon: Icons.Marketplace },
         { name: "Calculators", href: "/calculators", icon: Icons.Calculator },
-        { name: "Messaging", href: "/chat", icon: Icons.Chat },
+        { name: "Messaging", href: "/brand/chat", icon: Icons.Chat },
         { name: "Profile", href: "/brand/profile", icon: Icons.Profile }
       );
     } else if (user.role === "influencer") {
       items.push(
         { name: "Dashboard", href: "/influencer/dashboard", icon: Icons.Dashboard },
-        { name: "Marketplace", href: "/marketplace", icon: Icons.Marketplace },
-        // { name: "Calculators", href: "/calculators", icon: Icons.Calculator },
-        { name: "Messaging", href: "/chat", icon: Icons.Chat },
+        { name: "Marketplace", href: "/influencer/marketplace", icon: Icons.Marketplace },
+        { name: "Earnings", href: "/influencer/earnings", icon: Icons.Earnings },
+        // { name: "Messaging", href: "/influencer/chat", icon: Icons.Chat },
         { name: "Profile", href: "/influencer/profile", icon: Icons.Profile }
       );
     } else { // admin
       items.push(
         { name: "Dashboard", href: "/admin/dashboard", icon: Icons.Admin },
         { name: "Calculators", href: "/calculators", icon: Icons.Calculator },
-        { name: "Messaging", href: "/chat", icon: Icons.Chat }
+        { name: "Messaging", href: "/admin/chat", icon: Icons.Chat }
       );
     }
     return items;
@@ -257,7 +249,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
           {/* Top Navbar */}
           <header className="h-16 border-b border-slate-200/80 dark:border-slate-800/50 bg-white/75 dark:bg-slate-950/60 backdrop-blur-xl px-8 flex items-center justify-between sticky top-0 z-30">
             <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-              {pathname === "/" ? "Platform Console" : pathname.replace("/", "").replace(/-/g, " ").replace(/\//g, " ➜ ")}
+              {currentNavItems.find((item) => item.href === pathname)?.name}
             </div>
 
             <div className="flex items-center gap-4">
@@ -312,7 +304,8 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
           <main className="flex-1 p-6 md:p-8 pb-24 md:pb-8">
             {children}
           </main>
-        </div>        {/* Mobile Bottom Tab Bar */}
+        </div>
+        {/* Mobile Bottom Tab Bar */}
         <nav className="flex md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/90 dark:bg-slate-950/90 border-t border-slate-200 dark:border-slate-800/60 backdrop-blur-xl items-center justify-around px-2 z-40 pb-safe shadow-[0_-8px_30px_rgba(0,0,0,0.1)]">
           {currentNavItems.map((item) => {
             const isActive = pathname === item.href;

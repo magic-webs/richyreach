@@ -6,10 +6,23 @@ import { getCookie } from "hono/cookie";
 import { getDb } from "../db";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
+import { auth } from "../auth";
 
 export const requireAuth = (): MiddlewareHandler<HonoEnv> => {
   return async (c, next) => {
     try {
+      // 1. Try Better Auth first
+      const bSession = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (bSession && bSession.user) {
+        c.set("user", {
+          id: bSession.user.id,
+          name: bSession.user.name,
+          email: bSession.user.email,
+          role: (bSession.user as any).role || "influencer",
+        });
+        return await next();
+      }
+
       const db = getDb(c.env);
       const authHeader = c.req.header("Authorization");
       let token = getCookie(c, "reelio_session");
@@ -21,6 +34,7 @@ export const requireAuth = (): MiddlewareHandler<HonoEnv> => {
       if (!token) {
         return sendError(c, "Unauthorized. Authentication is required to access this endpoint.", 401);
       }
+
 
       // 1. Fallback for easier development testing (mock tokens)
       if (token.startsWith("mock-")) {
@@ -51,9 +65,15 @@ export const requireAuth = (): MiddlewareHandler<HonoEnv> => {
                 niche: "Lifestyle",
                 pricing: 12000,
                 avgViews: 85000,
+                avgLikes: 2496,
                 verified: true,
                 level: "mid",
+                reachScore: 62,
+                country: "India",
+                postingFrequency: 5.0,
+                growthRate: 3.2,
               });
+
             } else if (mockRole === "brand") {
               await db.insert(schema.brandProfiles).values({
                 userId: mockId,

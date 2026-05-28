@@ -19,10 +19,6 @@ export function getDb(env?: Record<string, any>) {
     authToken = process.env.TURSO_AUTH_TOKEN || authToken;
   }
 
-  // Fallback to local SQLite file for local development if Turso variables are missing
-  if (!url) {
-    url = "file:local.db";
-  }
 
   if (!url) {
     const isProduction = process.env.NODE_ENV === "production" || (typeof window === "undefined" && !process.env.NEXT_DEV);
@@ -34,7 +30,7 @@ export function getDb(env?: Record<string, any>) {
   }
 
   console.log("[getDb] Connecting to DB URL:", JSON.stringify(url));
-  
+
   const client = createClient({ url, authToken });
   dbInstance = drizzle(client, { schema });
   return dbInstance;

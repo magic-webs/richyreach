@@ -1,4 +1,4 @@
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, gte, lte, like } from "drizzle-orm";
 import { getDb } from "../db";
 import * as schema from "../db/schema";
 import { fetchWebsiteMetadata } from "../utils/metadata-fetcher";
@@ -271,6 +271,56 @@ export class BrandService {
     });
 
     return invite;
+  }
+
+  // ==========================================
+  // Saved Influencers
+  // ==========================================
+  static async saveInfluencer(env: Record<string, any>, brandId: string, influencerId: string) {
+    const db = getDb(env);
+    const existing = await db
+      .select()
+      .from(schema.savedInfluencers)
+      .where(and(eq(schema.savedInfluencers.brandId, brandId), eq(schema.savedInfluencers.influencerId, influencerId)))
+      .get();
+    if (existing) return { alreadySaved: true, id: existing.id };
+    const id = crypto.randomUUID();
+    await db.insert(schema.savedInfluencers).values({ id, brandId, influencerId });
+    return { id, brandId, influencerId };
+  }
+
+  static async unsaveInfluencer(env: Record<string, any>, brandId: string, influencerId: string) {
+    const db = getDb(env);
+    await db
+      .delete(schema.savedInfluencers)
+      .where(and(eq(schema.savedInfluencers.brandId, brandId), eq(schema.savedInfluencers.influencerId, influencerId)));
+    return { success: true };
+  }
+
+  static async getSavedInfluencers(env: Record<string, any>, brandId: string) {
+    const db = getDb(env);
+    return db
+      .select({
+        savedId: schema.savedInfluencers.id,
+        id: schema.users.id,
+        name: schema.users.name,
+        avatar: schema.users.image,
+        bio: schema.users.bio,
+        instagramHandle: schema.influencerProfiles.instagramHandle,
+        followers: schema.influencerProfiles.followers,
+        engagementRate: schema.influencerProfiles.engagementRate,
+        niche: schema.influencerProfiles.niche,
+        avgViews: schema.influencerProfiles.avgViews,
+        pricing: schema.influencerProfiles.pricing,
+        verified: schema.influencerProfiles.verified,
+        level: schema.influencerProfiles.level,
+        reachScore: schema.influencerProfiles.reachScore,
+        country: schema.influencerProfiles.country,
+      })
+      .from(schema.savedInfluencers)
+      .innerJoin(schema.influencerProfiles, eq(schema.savedInfluencers.influencerId, schema.influencerProfiles.userId))
+      .innerJoin(schema.users, eq(schema.influencerProfiles.userId, schema.users.id))
+      .where(eq(schema.savedInfluencers.brandId, brandId));
   }
 
   static async getDashboardData(env: Record<string, any>, brandId: string) {
