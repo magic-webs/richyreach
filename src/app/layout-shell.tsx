@@ -1,170 +1,103 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Icons from "@/components/icons";
+import { authClient } from "@/lib/auth-client";
+import { useAuthStore } from "@/store/useAuthStore";
 
-// Define mock session types
-interface UserSession {
-  id: string;
-  name: string;
-  email: string;
-  role: "influencer" | "brand" | "admin";
-  avatar: string;
-  instagramHandle?: string;
-  companyName?: string;
-}
-
-interface AuthContextType {
-  user: UserSession;
-  switchRole: (role: "influencer" | "brand" | "admin") => void;
-  updateUser: (data: Partial<UserSession>) => void;
-  notifications: Array<{ id: string; title: string; message: string; read: boolean; time: string }>;
-  markNotificationsRead: () => void;
-}
-
-const defaultUser: UserSession = {
-  id: "mock_influencer_id",
-  name: "Avijit Dev",
-  email: "avijit@richyreach.com",
-  role: "influencer",
-  avatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=avijit",
-  instagramHandle: "avijit_creates",
+export const useAuth = () => {
+  const user = useAuthStore((s) => s.user);
+  const updateUser = useAuthStore((s) => s.updateUser);
+  const notifications = useAuthStore((s) => s.notifications);
+  const markNotificationsRead = useAuthStore((s) => s.markNotificationsRead);
+  return { user, updateUser, notifications, markNotificationsRead };
 };
 
-const AuthContext = createContext<AuthContextType>({
-  user: defaultUser,
-  switchRole: () => { },
-  updateUser: () => { },
-  notifications: [],
-  markNotificationsRead: () => { },
-});
-
-export const useMockAuth = () => useContext(AuthContext);
-
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserSession>(defaultUser);
-  const [notifications, setNotifications] = useState([
-    {
-      id: "1",
-      title: "New Campaign invite!",
-      message: "Vogue Clothing invited you to apply for their Summer Fit campaign.",
-      read: false,
-      time: "5m ago",
-    },
-    {
-      id: "2",
-      title: "Payment Received",
-      message: "Escrow payment for 'Gamer Keyboard review' has cleared.",
-      read: false,
-      time: "2h ago",
-    },
-  ]);
+  const { data: session, isPending } = authClient.useSession();
+  const { user } = useAuthStore();
+  const notifications = useAuthStore((s) => s.notifications);
+  const markNotificationsRead = useAuthStore((s) => s.markNotificationsRead);
+  const setNotifications = useAuthStore((s) => s.setNotifications);
+  
   const [showNotif, setShowNotif] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+  
+  // Track whether we've finished our custom session bootstrap
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const bootstrapRan = useRef(false);
   const pathname = usePathname();
+  const router = useRouter();
 
-  // Keep state sync across page changes
   useEffect(() => {
-    const saved = localStorage.getItem("reelio_mock_user");
-    if (saved) {
+    setIsHydrated(true);
+  }, []);
+
+  // Primary: sync from Better Auth session (OAuth logins)
+  useEffect(() => {
+    if (session?.user) {
+      useAuthStore.getState().updateUser({
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+        role: (session.user as any).role || "influencer",
+        avatar: session.user.image || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(session.user.name)}`,
+      });
+      setSessionChecked(true);
+    }
+  }, [session]);
+
+  // Fallback: bootstrap from our custom OTP session cookie via /api/auth/session
+  // This runs once after Better Auth finishes its check and returns no session.
+  useEffect(() => {
+    if (isPending) return; // Wait for Better Auth to finish
+    if (session?.user) return; // Already handled above
+    if (bootstrapRan.current) return; // Only run once
+    bootstrapRan.current = true;
+
+    async function fetchCustomSession() {
       try {
-        setUser(JSON.parse(saved));
-      } catch (e) { }
-    }
-
-    // Sync session with backend in background
-    const token = localStorage.getItem("reelio_session_token");
-    if (token) {
-      fetch("/api/auth/session", {
-        headers: { "Authorization": `Bearer ${token}` }
-      })
-        .then(res => res.json() as any)
-        .then(data => {
-          if (data && data.success && data.data && data.data.user) {
-            const syncedUser = {
-              id: data.data.user.id,
-              name: data.data.user.name,
-              email: data.data.user.email,
-              role: data.data.user.role,
-              avatar: data.data.user.image || `https://api.dicebear.com/7.x/adventurer/svg?seed=${data.data.user.name}`,
-            };
-            setUser(syncedUser);
-            localStorage.setItem("reelio_mock_user", JSON.stringify(syncedUser));
-          } else {
-            // Token invalid or expired
-            localStorage.removeItem("reelio_session_token");
-            localStorage.removeItem("reelio_mock_user");
+        const res = await fetch("/api/auth/session", {
+          credentials: "include", // Send reelio_session cookie
+          cache: "no-store",
+        });
+        if (res.ok) {
+          const data = await res.json() as any;
+          const u = data?.data?.user;
+          if (u?.id) {
+            useAuthStore.getState().updateUser({
+              id: u.id,
+              name: u.name || "",
+              email: u.email || "",
+              role: u.role || "influencer",
+              avatar: u.image || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.name || u.id)}`,
+            });
+            return;
           }
-        })
-        .catch(err => console.error("Session sync failed:", err));
+        }
+        // If no valid session was found via BetterAuth or fallback API, clear persisted user
+        useAuthStore.getState().logout();
+      } catch (_) {
+        // Network error — leave user as unauthenticated
+        useAuthStore.getState().logout();
+      } finally {
+        setSessionChecked(true);
+      }
     }
-  }, [pathname]);
 
-  const switchRole = (role: "influencer" | "brand" | "admin") => {
-    let updatedUser: UserSession;
-    if (role === "influencer") {
-      updatedUser = {
-        id: "mock_influencer_id",
-        name: "Avijit Dev",
-        email: "avijit@richyreach.com",
-        role: "influencer",
-        avatar: "https://api.dicebear.com/7.x/adventurer/svg?seed=avijit",
-        instagramHandle: user.instagramHandle || "avijit_creates",
-      };
-    } else if (role === "brand") {
-      updatedUser = {
-        id: "mock_brand_id",
-        name: "Aura Apparel",
-        email: "collabs@aura.com",
-        role: "brand",
-        avatar: "https://api.dicebear.com/7.x/initials/svg?seed=Aura",
-        companyName: user.companyName || "Aura Apparel",
-      };
-    } else {
-      updatedUser = {
-        id: "mock_admin_id",
-        name: "Admin Moderator",
-        email: "admin@richyreach.com",
-        role: "admin",
-        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=admin",
-      };
-    }
-    setUser(updatedUser);
-    localStorage.setItem("reelio_mock_user", JSON.stringify(updatedUser));
-
-    // Add context notification
-    setNotifications(prev => [
-      {
-        id: Date.now().toString(),
-        title: "Role Switched",
-        message: `You are now browsing as a ${role.toUpperCase()}`,
-        read: false,
-        time: "Just now"
-      },
-      ...prev
-    ]);
-  };
-
-  const updateUser = (data: Partial<UserSession>) => {
-    setUser(prev => {
-      const updated = { ...prev, ...data };
-      localStorage.setItem("reelio_mock_user", JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  const markNotificationsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
+    fetchCustomSession();
+  }, [isPending, session]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // Custom Inline SVG Icons to avoid import breaks
 
-
   // Dynamic role-based navigation item filtering
   const getRoleNavItems = () => {
+    if (user.id === "") return [];
+    
     const items = [];
     if (user.role === "brand") {
       items.push(
@@ -186,6 +119,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     } else { // admin
       items.push(
         { name: "Dashboard", href: "/admin/dashboard", icon: Icons.Admin },
+        { name: "Profiles", href: "/admin/profiles", icon: Icons.Profile },
         { name: "Calculators", href: "/calculators", icon: Icons.Calculator },
         { name: "Messaging", href: "/admin/chat", icon: Icons.Chat }
       );
@@ -195,16 +129,59 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
 
   const currentNavItems = getRoleNavItems();
 
-  if (pathname === "/" || pathname === "/authentication") {
+  // Public pages: render without sidebar/nav
+  if (pathname === "/authentication") {
+    if (sessionChecked && user.id !== "") {
+      router.replace(`/${user.role}/dashboard`);
+      return null;
+    }
+    return <>{children}</>;
+  }
+
+  if (pathname === "/") {
+    return <>{children}</>;
+  }
+
+  // Show loading spinner until hydrated. Also wait for session check if user is not yet persisted.
+  if (!isHydrated || (isPending && !sessionChecked && user.id === "")) {
     return (
-      <AuthContext.Provider value={{ user, switchRole, updateUser, notifications, markNotificationsRead }}>
-        {children}
-      </AuthContext.Provider>
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Not authenticated — redirect to login page
+  if (user.id === "") {
+    router.replace(`/authentication?redirectTo=${encodeURIComponent(pathname)}`);
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  // Role-based access guard on the client side (middleware handles it server-side too)
+  const roleDashboard = `/${user.role}/dashboard`;
+  const pathRole = pathname.startsWith("/brand")
+    ? "brand"
+    : pathname.startsWith("/influencer")
+    ? "influencer"
+    : pathname.startsWith("/admin")
+    ? "admin"
+    : null;
+
+  if (pathRole && user.role !== "admin" && pathRole !== user.role) {
+    router.replace(roleDashboard);
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
     );
   }
 
   return (
-    <AuthContext.Provider value={{ user, switchRole, updateUser, notifications, markNotificationsRead }}>
+    <>
       <div className="flex min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased overflow-x-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
 
         {/* Background Gradients */}
@@ -328,6 +305,6 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
           })}
         </nav>
       </div>
-    </AuthContext.Provider>
+    </>
   );
 }

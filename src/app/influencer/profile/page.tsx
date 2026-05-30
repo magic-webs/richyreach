@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMockAuth } from "../../layout-shell";
+import { useAuth } from "../../layout-shell";
 import { api } from "@/lib/api-client";
 import { ReachScoreRing } from "@/components/ui/reach-score-ring";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GlassButton } from "@/components/ui/glass-button";
 import { GlassPurpleButton } from "@/components/ui/glass-purple-button";
+import { authClient } from "@/lib/auth-client";
 
 // ──────────────────────────────────────────────────────────────
 // Small helpers
@@ -84,30 +85,32 @@ function Sparkline({ data, color = "#7E1523", height = 40 }: { data: number[]; c
   );
 }
 
-// Deterministic analytics mock
-function getMockAnalytics(seed: string) {
-  const h = seed.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const rand = (base: number, amp: number, i: number) => Math.round(base + Math.sin(h * 0.3 + i * 1.7) * amp + Math.cos(i * 0.8) * amp * 0.4);
-  return {
-    followers: Array.from({ length: 6 }, (_, i) => rand(40000, 5000, i)),
-    engagement: Array.from({ length: 6 }, (_, i) => parseFloat((rand(48, 8, i) / 10).toFixed(1))),
-    views: Array.from({ length: 6 }, (_, i) => rand(18000, 5000, i)),
-    months: ["Dec", "Jan", "Feb", "Mar", "Apr", "May"],
-  };
-}
-
 // ──────────────────────────────────────────────────────────────
 // Main Page
 // ──────────────────────────────────────────────────────────────
 export default function InfluencerProfilePage() {
   const router = useRouter();
-  const { user, updateUser } = useMockAuth();
+  const { user, updateUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "audience" | "portfolio" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "audience" | "portfolio" | "accounts" | "settings">("overview");
 
+  // Multi-account state
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(false);
+  const [addingAccount, setAddingAccount] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newAccHandle, setNewAccHandle] = useState("");
+  const [newAccFollowers, setNewAccFollowers] = useState("");
+  const [newAccEngagement, setNewAccEngagement] = useState("");
+  const [newAccAvgViews, setNewAccAvgViews] = useState("");
+  const [newAccNiche, setNewAccNiche] = useState("Lifestyle");
+  const [newAccPricing, setNewAccPricing] = useState("");
+  const [newAccCountry, setNewAccCountry] = useState("");
+  const [newAccBio, setNewAccBio] = useState("");
+  const [accountsError, setAccountsError] = useState<string | null>(null);
 
   // Form state
   const [instagramHandle, setInstagramHandle] = useState("");
@@ -153,10 +156,120 @@ export default function InfluencerProfilePage() {
     }
   };
 
+  const fetchAccounts = async () => {
+    setAccountsLoading(true);
+    try {
+      const res = await fetch("/api/influencers/accounts", { credentials: "include" });
+      const json = await res.json() as any;
+      if (json.success) setAccounts(json.data || []);
+    } catch (err) {
+      console.error("Failed to load accounts", err);
+    } finally {
+      setAccountsLoading(false);
+    }
+  };
+
+  const handleAddAccount = async () => {
+    if (!newAccHandle.trim()) { setAccountsError("Instagram handle is required"); return; }
+    setAccountsError(null);
+    setAddingAccount(true);
+    try {
+      const res = await fetch("/api/influencers/accounts", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          instagramHandle: newAccHandle.trim(),
+          followers: parseInt(newAccFollowers) || 0,
+          engagementRate: parseFloat(newAccEngagement) || 0,
+          avgViews: parseInt(newAccAvgViews) || 0,
+          niche: newAccNiche,
+          pricing: parseFloat(newAccPricing) || 0,
+          country: newAccCountry || null,
+          bio: newAccBio || null,
+        }),
+      });
+      const json = await res.json() as any;
+      if (json.success) {
+        setShowAddForm(false);
+        setNewAccHandle(""); setNewAccFollowers(""); setNewAccEngagement(""); setNewAccAvgViews(""); setNewAccNiche("Lifestyle"); setNewAccPricing(""); setNewAccCountry(""); setNewAccBio("");
+        fetchAccounts();
+      } else {
+        setAccountsError(json.error || "Failed to add account");
+      }
+    } catch (err: any) {
+      setAccountsError(err?.message || "Network error");
+    } finally {
+      setAddingAccount(false);
+    }
+  };
+
+  const handleDeleteAccount = async (id: string) => {
+    if (!confirm("Remove this Instagram account?")) return;
+    try {
+      const res = await fetch(`/api/influencers/accounts/${id}`, { method: "DELETE", credentials: "include" });
+      const json = await res.json() as any;
+      if (json.success) fetchAccounts();
+    } catch (err) { console.error(err); }
+  };
+
   useEffect(() => {
-    if (user.role === "influencer") fetchProfile();
+    if (user.role === "influencer") {
+      fetchProfile();
+      fetchAccounts();
+    }
     // eslint-disable-next-line
   }, [user.role, user.id]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("instagram_sync") === "success") {
+        url.searchParams.delete("instagram_sync");
+        window.history.replaceState({}, "", url.toString());
+        syncInstagramData();
+      }
+    }
+    // eslint-disable-next-line
+  }, []);
+
+  const syncInstagramData = async () => {
+    setLoading(true);
+    setSaveError(null);
+    try {
+      const res = await api.api.influencers["sync-instagram"].$post();
+      const result = await res.json();
+      if (res.ok && result.success && result.data) {
+        const d = result.data as any;
+        setProfile(d);
+        setInstagramHandle(d.instagramHandle || "");
+        updateUser({ instagramHandle: d.instagramHandle, avatar: d.avatar || user.avatar });
+        setActiveTab("overview");
+      } else {
+        setSaveError((result as any).error || (result as any).message || "Failed to sync Instagram profile.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setSaveError(err?.message || "Failed to sync Instagram profile.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInstagramConnect = async () => {
+    try {
+      setSaving(true);
+      setSaveError(null);
+      await authClient.signIn.social({
+        provider: "instagram",
+        callbackURL: "/influencer/profile?instagram_sync=success"
+      });
+    } catch (err: any) {
+      console.error(err);
+      setSaveError(err?.message || "Failed to initiate Instagram login.");
+      setSaving(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,7 +325,12 @@ export default function InfluencerProfilePage() {
     </div>
   );
 
-  const analytics = getMockAnalytics(profile?.instagramHandle || "creator");
+  const analytics = {
+    followers: [0, 0, 0, 0, 0, 0],
+    engagement: [0, 0, 0, 0, 0, 0],
+    views: [0, 0, 0, 0, 0, 0],
+    months: ["Dec", "Jan", "Feb", "Mar", "Apr", "May"],
+  };
   const breakdown = profile?.reachScoreBreakdown || {};
 
   const tabs = [
@@ -220,6 +338,7 @@ export default function InfluencerProfilePage() {
     { id: "analytics", label: "Analytics" },
     { id: "audience", label: "Audience" },
     { id: "portfolio", label: "Portfolio" },
+    { id: "accounts", label: `My Accounts (${accounts.length})` },
     { id: "settings", label: "Settings" },
   ] as const;
 
@@ -539,14 +658,38 @@ export default function InfluencerProfilePage() {
         <div className="bg-white/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-lg shadow-slate-100/40 dark:shadow-none">
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-6">Edit Creator Profile</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Instagram handle */}
-            <div className="space-y-2">
-              <Label htmlFor="handle" className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Instagram Handle</Label>
-              <div className="relative flex items-center">
-                <span className="absolute left-4 text-slate-400 font-bold select-none">@</span>
-                <Input id="handle" placeholder="username" value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} className="pl-9 bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/20" required />
+            {/* Instagram Link & Sync */}
+            <div className="space-y-4">
+              <Label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Instagram Account</Label>
+              
+              {/* OAuth Sync */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-rose-500 to-purple-600 flex items-center justify-center text-white shadow-md">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">
+                      {instagramHandle ? `@${instagramHandle}` : "Not Connected"}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {instagramHandle ? "Connected securely via API" : "Link your account to sync followers & reach"}
+                    </p>
+                  </div>
+                </div>
+                <GlassButton type="button" size="sm" onClick={handleInstagramConnect} disabled={saving} className="whitespace-nowrap font-bold text-primary dark:text-primary">
+                  {saving ? "Redirecting..." : instagramHandle ? "Re-sync via OAuth" : "Connect Account"}
+                </GlassButton>
               </div>
-              <p className="text-[10px] text-slate-400">Deterministic data is synced from this handle on save.</p>
+
+              {/* Manual Fallback */}
+              <div className="relative flex flex-col gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <Label htmlFor="handle" className="text-[10px] uppercase text-slate-400">Or manually update handle (Fallback)</Label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-4 text-slate-400 font-bold select-none">@</span>
+                  <Input id="handle" placeholder="username" value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} className="pl-9 bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/20" required />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -612,6 +755,140 @@ export default function InfluencerProfilePage() {
             )}
           </form>
 
+        </div>
+      )}
+      {/* ══════════════════════════════════════════
+          TAB: MY ACCOUNTS
+      ══════════════════════════════════════════ */}
+      {activeTab === "accounts" && (
+        <div className="space-y-6">
+          <div className="bg-white/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-lg shadow-slate-100/40 dark:shadow-none">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">My Instagram Accounts</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Add multiple accounts for different niches. Each must be approved by an admin before use.</p>
+              </div>
+              <button
+                onClick={() => { setShowAddForm(!showAddForm); setAccountsError(null); }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-90 transition-opacity shadow cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                Add Account
+              </button>
+            </div>
+
+            {/* Add Form */}
+            {showAddForm && (
+              <div className="mb-6 p-5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Add New Instagram Account</h3>
+                {accountsError && (
+                  <p className="text-xs text-rose-500 bg-rose-500/10 border border-rose-500/20 px-3 py-2 rounded-xl">{accountsError}</p>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Instagram Handle *</label>
+                    <div className="relative flex items-center"><span className="absolute left-3 text-slate-400 font-bold">@</span>
+                      <input placeholder="username" value={newAccHandle} onChange={e => setNewAccHandle(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Niche</label>
+                    <select value={newAccNiche} onChange={e => setNewAccNiche(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary">
+                      {NICHES.map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Followers</label>
+                    <input type="number" placeholder="e.g. 50000" value={newAccFollowers} onChange={e => setNewAccFollowers(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Engagement Rate (%)</label>
+                    <input type="number" step="0.1" placeholder="e.g. 3.5" value={newAccEngagement} onChange={e => setNewAccEngagement(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Avg Views / Reel</label>
+                    <input type="number" placeholder="e.g. 25000" value={newAccAvgViews} onChange={e => setNewAccAvgViews(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Base Price (USD / post)</label>
+                    <div className="relative flex items-center"><span className="absolute left-3 text-slate-400 font-bold">$</span>
+                      <input type="number" placeholder="150" value={newAccPricing} onChange={e => setNewAccPricing(e.target.value)} className="w-full pl-7 pr-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Country</label>
+                    <input placeholder="e.g. India" value={newAccCountry} onChange={e => setNewAccCountry(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Short Bio (optional)</label>
+                    <input placeholder="Tell brands about this account" value={newAccBio} onChange={e => setNewAccBio(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-1">
+                  <button onClick={handleAddAccount} disabled={addingAccount} className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer shadow">
+                    {addingAccount ? "Submitting..." : "Submit for Verification"}
+                  </button>
+                  <button onClick={() => { setShowAddForm(false); setAccountsError(null); }} className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Accounts List */}
+            {accountsLoading ? (
+              <div className="py-12 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+              </div>
+            ) : accounts.length === 0 ? (
+              <div className="text-center py-14 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl">
+                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-7 h-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">No accounts added yet. Click <strong>Add Account</strong> to get started.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {accounts.map((acc: any) => (
+                  <div key={acc.id} className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-yellow-400 via-rose-500 to-purple-600 flex items-center justify-center text-white text-sm font-black shadow-md shrink-0">
+                      IG
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-slate-900 dark:text-white text-sm">@{acc.instagramHandle}</p>
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                          acc.status === "verified" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" :
+                          acc.status === "rejected" ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30" :
+                          "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                        }`}>{acc.status}</span>
+                      </div>
+                      <div className="flex gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
+                        <span>{(acc.followers || 0) >= 1000 ? `${((acc.followers || 0) / 1000).toFixed(1)}K` : acc.followers || 0} followers</span>
+                        <span>{(acc.engagementRate || 0).toFixed(1)}% eng.</span>
+                        <span className="capitalize">{acc.niche}</span>
+                        <span>${((acc.pricing || 0) / 100).toFixed(0)}/post</span>
+                      </div>
+                      {acc.verificationNote && (
+                        <p className="text-[10px] text-rose-500 mt-1">Admin note: {acc.verificationNote}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDeleteAccount(acc.id)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              <span className="font-bold text-slate-700 dark:text-slate-300">ℹ️ How it works: </span>
+              After submitting, an admin will review your account details. Once approved, you can select this account when applying to campaigns.
+            </div>
+          </div>
         </div>
       )}
     </div>

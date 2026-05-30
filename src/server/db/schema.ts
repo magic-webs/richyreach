@@ -101,6 +101,59 @@ export const brandProfiles = sqliteTable("brand_profiles", {
   verified: integer("verified", { mode: "boolean" }).notNull().default(false),
 });
 
+// ──────────────────────────────────────────────
+// Multi-profile Sub-accounts
+// ──────────────────────────────────────────────
+
+// Extra Instagram accounts per influencer (manually added, admin-verified)
+export const influencerAccounts = sqliteTable("influencer_accounts", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  // Instagram identity
+  instagramHandle: text("instagram_handle").notNull().unique(),
+  // Manually entered stats
+  followers: integer("followers").notNull().default(0),
+  engagementRate: real("engagement_rate").notNull().default(0),
+  avgViews: integer("avg_views").notNull().default(0),
+  avgLikes: integer("avg_likes").notNull().default(0),
+  niche: text("niche").notNull().default("Lifestyle"),
+  pricing: integer("pricing").notNull().default(0), // USD cents per post
+  level: text("level").$type<"nano" | "micro" | "mid" | "macro" | "mega">().notNull().default("nano"),
+  country: text("country"),
+  bio: text("bio"),
+  // Verification
+  status: text("status").$type<"pending" | "verified" | "rejected">().notNull().default("pending"),
+  verified: integer("verified", { mode: "boolean" }).notNull().default(false),
+  verifiedAt: integer("verified_at", { mode: "timestamp" }),
+  verifiedBy: text("verified_by").references(() => users.id),
+  verificationNote: text("verification_note"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+// Extra brand profiles per brand user (manually added, admin-verified)
+export const brandAccounts = sqliteTable("brand_accounts", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  // Brand identity
+  companyName: text("company_name").notNull(),
+  website: text("website").notNull().default(""),
+  logo: text("logo"),
+  category: text("category").notNull().default("General"),
+  description: text("description"),
+  instagramPage: text("instagram_page"),
+  brandSize: text("brand_size").$type<"startup" | "smb" | "enterprise">().default("smb"),
+  budgetRange: text("budget_range").$type<"low" | "mid" | "high" | "enterprise">().default("mid"),
+  // Verification
+  status: text("status").$type<"pending" | "verified" | "rejected">().notNull().default("pending"),
+  verified: integer("verified", { mode: "boolean" }).notNull().default(false),
+  verifiedAt: integer("verified_at", { mode: "timestamp" }),
+  verifiedBy: text("verified_by").references(() => users.id),
+  verificationNote: text("verification_note"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
 export const creatorSkills = sqliteTable("creator_skills", {
   id: text("id").primaryKey(),
   influencerId: text("influencer_id").notNull().references(() => influencerProfiles.userId, { onDelete: "cascade" }),
@@ -153,10 +206,13 @@ export const audienceData = sqliteTable("audience_data", {
 export const campaigns = sqliteTable("campaigns", {
   id: text("id").primaryKey(),
   brandId: text("brand_id").notNull().references(() => brandProfiles.userId, { onDelete: "cascade" }),
+  // Optional: which brand sub-account is posting this campaign
+  brandAccountId: text("brand_account_id").references(() => brandAccounts.id, { onDelete: "set null" }),
   title: text("title").notNull(),
   description: text("description").notNull(),
   budget: integer("budget").notNull(), // Budget in USD cents
   campaignType: text("campaign_type").notNull(), // e.g. "story", "reel", "post", "long-term"
+  allowFraction: integer("allow_fraction", { mode: "boolean" }).notNull().default(false),
   targetAudience: text("target_audience"),
   requirements: text("requirements"),
   status: text("status").$type<"draft" | "active" | "completed" | "cancelled">().notNull().default("draft"),
@@ -168,6 +224,8 @@ export const campaignApplications = sqliteTable("campaign_applications", {
   id: text("id").primaryKey(),
   influencerId: text("influencer_id").notNull().references(() => influencerProfiles.userId, { onDelete: "cascade" }),
   campaignId: text("campaign_id").notNull().references(() => campaigns.id, { onDelete: "cascade" }),
+  // Optional: which influencer sub-account is applying
+  influencerAccountId: text("influencer_account_id").references(() => influencerAccounts.id, { onDelete: "set null" }),
   proposal: text("proposal").notNull(),
   status: text("status").$type<"pending" | "accepted" | "rejected">().notNull().default("pending"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
@@ -455,3 +513,30 @@ export const savedCampaignsRelations = relations(savedCampaigns, ({ one }) => ({
     references: [campaigns.id],
   }),
 }));
+
+// ── New sub-account relations ───────────────────────────────────
+
+export const influencerAccountsRelations = relations(influencerAccounts, ({ one }) => ({
+  user: one(users, {
+    fields: [influencerAccounts.userId],
+    references: [users.id],
+  }),
+  verifier: one(users, {
+    fields: [influencerAccounts.verifiedBy],
+    references: [users.id],
+    relationName: "influencerAccountVerifier",
+  }),
+}));
+
+export const brandAccountsRelations = relations(brandAccounts, ({ one }) => ({
+  user: one(users, {
+    fields: [brandAccounts.userId],
+    references: [users.id],
+  }),
+  verifier: one(users, {
+    fields: [brandAccounts.verifiedBy],
+    references: [users.id],
+    relationName: "brandAccountVerifier",
+  }),
+}));
+

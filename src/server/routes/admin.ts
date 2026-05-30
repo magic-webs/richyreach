@@ -10,6 +10,10 @@ const adminRouter = new Hono<HonoEnv>()
   .get("/users", AdminController.getUsers)
   .get("/campaigns", AdminController.getCampaigns)
   .get("/reports", AdminController.getReports)
-  .delete("/user/:id", AdminController.deleteUser);
+  .delete("/user/:id", AdminController.deleteUser)
+  // Profile verification queue
+  .get("/pending-profiles", AdminController.getPendingProfiles)
+  .post("/verify-profile", AdminController.verifyProfile);
 
 export default adminRouter;
+

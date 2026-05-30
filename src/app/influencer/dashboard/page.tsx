@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useMockAuth } from "../../layout-shell";
+import { useAuth } from "../../layout-shell";
 import { api } from "@/lib/api-client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,7 +10,7 @@ import { GlassButton } from "@/components/ui/glass-button";
 import { GlassPurpleButton } from "@/components/ui/glass-purple-button";
 
 export default function InfluencerDashboardPage() {
-  const { user } = useMockAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [campaignsData, setCampaignsData] = useState<any>({ applications: [], invites: [] });

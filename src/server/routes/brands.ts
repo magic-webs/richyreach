@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { BrandController } from "../controllers/brand.controller";
+import { BrandAccountsController } from "../controllers/brand-accounts.controller";
 import { requireAuth } from "../middlewares/auth";
 import { requireRole } from "../middlewares/role";
 import { HonoEnv } from "../types";
@@ -11,9 +12,15 @@ const brandRouter = new Hono<HonoEnv>()
   .put("/profile", BrandController.createOrUpdateProfile)
   .get("/profile", BrandController.getProfile)
   .get("/dashboard", BrandController.getDashboard)
+  // Brand sub-accounts (multi-profile)
+  .get("/accounts", BrandAccountsController.listAccounts)
+  .post("/accounts", BrandAccountsController.addAccount)
+  .put("/accounts/:id", BrandAccountsController.updateAccount)
+  .delete("/accounts/:id", BrandAccountsController.deleteAccount)
   // Saved influencers
   .get("/saved-influencers", BrandController.getSavedInfluencers)
   .post("/save-influencer", BrandController.saveInfluencer)
   .delete("/save-influencer/:influencerId", BrandController.unsaveInfluencer);
 
 export default brandRouter;
+

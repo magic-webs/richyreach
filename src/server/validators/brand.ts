@@ -16,6 +16,8 @@ export const createCampaignSchema = z.object({
   targetAudience: z.string().optional().nullable(),
   requirements: z.string().optional().nullable(),
   expectedReach: z.number().int().nonnegative().optional(),
+  allowFraction: z.boolean().optional(),
+  brandAccountId: z.string().optional().nullable(),
 });
 
 export const inviteInfluencerSchema = z.object({

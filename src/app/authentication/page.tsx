@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { useMockAuth } from "../layout-shell";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "../layout-shell";
 
 // ──────────────────────────────────────────────────────────────
 // Icons
@@ -76,11 +76,12 @@ const ROLE_COLORS = {
 } as const;
 
 // ──────────────────────────────────────────────────────────────
-// Component
+// Inner component (uses useSearchParams — must be inside Suspense)
 // ──────────────────────────────────────────────────────────────
-export default function AuthPage() {
+function AuthPageInner() {
   const router = useRouter();
-  const { switchRole, updateUser } = useMockAuth();
+  const searchParams = useSearchParams();
+  const { updateUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [authMethod, setAuthMethod] = useState<"email" | "whatsapp">("email");
@@ -135,7 +136,7 @@ export default function AuthPage() {
       const res = await fetch("/api/auth/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier: identifier.trim(), method: authMethod }),
+        body: JSON.stringify({ identifier: identifier.trim(), method: authMethod, mode: activeTab }),
       });
       const data = await res.json() as any;
       if (!res.ok) throw new Error(data.message || "Failed to send verification code.");
@@ -172,8 +173,7 @@ export default function AuthPage() {
       const data = await res.json() as any;
       if (!res.ok) throw new Error(data.message || "Invalid or expired verification code.");
       setSuccessMsg("Verification successful! Authenticating session...");
-      localStorage.setItem("reelio_session_token", data.data.token);
-      switchRole(data.data.user.role);
+      // Cookie is set by the server — no need to store token in localStorage
       updateUser({
         id: data.data.user.id,
         name: data.data.user.name,
@@ -181,11 +181,17 @@ export default function AuthPage() {
         role: data.data.user.role,
         avatar: data.data.user.image,
       });
-      setTimeout(() => {
-        if (data.data.user.role === "brand") router.push("/brand/dashboard");
-        else if (data.data.user.role === "admin") router.push("/admin/dashboard");
-        else router.push("/influencer/dashboard");
-      }, 800);
+      // Respect ?redirectTo if present, otherwise go to role dashboard
+      const redirectTo = searchParams.get("redirectTo");
+      const destination =
+        redirectTo && redirectTo.startsWith("/")
+          ? redirectTo
+          : data.data.user.role === "brand"
+          ? "/brand/dashboard"
+          : data.data.user.role === "influencer"
+          ? "/influencer/dashboard"
+          : "/admin/dashboard";
+      router.push(destination);
     } catch (err: any) {
       setErrorMsg(err.message || "Authentication failed. Please verify the code and try again.");
     } finally {
@@ -446,3 +452,22 @@ export default function AuthPage() {
     </div>
   );
 }
+
+// ──────────────────────────────────────────────────────────────
+// Default export — wraps inner component in Suspense boundary
+// (required by Next.js when using useSearchParams in a client component)
+// ──────────────────────────────────────────────────────────────
+export default function AuthPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7E1523]" />
+        </div>
+      }
+    >
+      <AuthPageInner />
+    </Suspense>
+  );
+}
+

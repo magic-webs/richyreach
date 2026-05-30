@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMockAuth } from "../../layout-shell";
+import { useAuth } from "../../layout-shell";
 import { api } from "@/lib/api-client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,13 +33,27 @@ function StatCard({ label, value, icon, color = "text-slate-900 dark:text-white"
 
 export default function BrandProfilePage() {
   const router = useRouter();
-  const { user, updateUser } = useMockAuth();
+  const { user, updateUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [savedInfluencers, setSavedInfluencers] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<"overview" | "campaigns" | "collaborations" | "analytics" | "saved" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "campaigns" | "collaborations" | "analytics" | "saved" | "accounts" | "settings">("overview");
+
+  // Brand sub-accounts state
+  const [brandAccounts, setBrandAccounts] = useState<any[]>([]);
+  const [brandAccountsLoading, setBrandAccountsLoading] = useState(false);
+  const [showBrandAddForm, setShowBrandAddForm] = useState(false);
+  const [addingBrandAccount, setAddingBrandAccount] = useState(false);
+  const [brandAccError, setBrandAccError] = useState<string | null>(null);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [newBrandWebsite, setNewBrandWebsite] = useState("");
+  const [newBrandCategory, setNewBrandCategory] = useState("General");
+  const [newBrandDescription, setNewBrandDescription] = useState("");
+  const [newBrandInstagram, setNewBrandInstagram] = useState("");
+  const [newBrandSize, setNewBrandSize] = useState("smb");
+  const [newBrandBudget, setNewBrandBudget] = useState("mid");
 
   // Form state
   const [companyName, setCompanyName] = useState("");
@@ -115,9 +129,66 @@ export default function BrandProfilePage() {
       fetchProfile();
       fetchCampaigns();
       fetchSaved();
+      fetchBrandAccounts();
     }
     // eslint-disable-next-line
   }, [user.role, user.id]);
+
+  const fetchBrandAccounts = async () => {
+    setBrandAccountsLoading(true);
+    try {
+      const res = await fetch("/api/brands/accounts", { credentials: "include" });
+      const json = await res.json() as any;
+      if (json.success) setBrandAccounts(json.data || []);
+    } catch (err) {
+      console.error("Failed to load brand accounts", err);
+    } finally {
+      setBrandAccountsLoading(false);
+    }
+  };
+
+  const handleAddBrandAccount = async () => {
+    if (!newBrandName.trim()) { setBrandAccError("Company name is required"); return; }
+    setBrandAccError(null);
+    setAddingBrandAccount(true);
+    try {
+      const res = await fetch("/api/brands/accounts", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyName: newBrandName.trim(),
+          website: newBrandWebsite.trim(),
+          category: newBrandCategory,
+          description: newBrandDescription || null,
+          instagramPage: newBrandInstagram || null,
+          brandSize: newBrandSize,
+          budgetRange: newBrandBudget,
+        }),
+      });
+      const json = await res.json() as any;
+      if (json.success) {
+        setShowBrandAddForm(false);
+        setNewBrandName(""); setNewBrandWebsite(""); setNewBrandCategory("General"); setNewBrandDescription(""); setNewBrandInstagram(""); setNewBrandSize("smb"); setNewBrandBudget("mid");
+        fetchBrandAccounts();
+      } else {
+        setBrandAccError(json.error || "Failed to add brand account");
+      }
+    } catch (err: any) {
+      setBrandAccError(err?.message || "Network error");
+    } finally {
+      setAddingBrandAccount(false);
+    }
+  };
+
+  const handleDeleteBrandAccount = async (id: string) => {
+    if (!confirm("Remove this brand account?")) return;
+    try {
+      const res = await fetch(`/api/brands/accounts/${id}`, { method: "DELETE", credentials: "include" });
+      const json = await res.json() as any;
+      if (json.success) fetchBrandAccounts();
+    } catch (err) { console.error(err); }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,6 +248,7 @@ export default function BrandProfilePage() {
     { id: "collaborations", label: "Collabs" },
     { id: "analytics", label: "Analytics" },
     { id: "saved", label: "Saved" },
+    { id: "accounts", label: `Brand Accounts (${brandAccounts.length})` },
     { id: "settings", label: "Settings" },
   ] as const;
 
@@ -503,6 +575,136 @@ export default function BrandProfilePage() {
               )}
             </button>
           </form>
+        </div>
+      )}
+      {/* ══ BRAND ACCOUNTS ══ */}
+      {activeTab === "accounts" && (
+        <div className="space-y-6">
+          <div className="bg-white/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-lg dark:shadow-none">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Brand Accounts</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Add multiple brand profiles. Each requires admin verification before use in campaigns.</p>
+              </div>
+              <button
+                onClick={() => { setShowBrandAddForm(!showBrandAddForm); setBrandAccError(null); }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-xs font-bold hover:bg-violet-500 transition-colors shadow cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                Add Brand
+              </button>
+            </div>
+
+            {/* Add Form */}
+            {showBrandAddForm && (
+              <div className="mb-6 p-5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Add New Brand Profile</h3>
+                {brandAccError && <p className="text-xs text-rose-500 bg-rose-500/10 border border-rose-500/20 px-3 py-2 rounded-xl">{brandAccError}</p>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Company Name *</label>
+                    <input placeholder="Acme Corp" value={newBrandName} onChange={e => setNewBrandName(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Website</label>
+                    <input placeholder="https://acme.com" value={newBrandWebsite} onChange={e => setNewBrandWebsite(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Category</label>
+                    <select value={newBrandCategory} onChange={e => setNewBrandCategory(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500">
+                      {["Fashion","Technology","Food & Beverage","Health & Wellness","Sports","Beauty","Travel","Entertainment","Finance","Education","Retail","General"].map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Instagram Page</label>
+                    <input placeholder="@handle" value={newBrandInstagram} onChange={e => setNewBrandInstagram(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Brand Size</label>
+                    <select value={newBrandSize} onChange={e => setNewBrandSize(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500">
+                      <option value="startup">Startup (1-50)</option>
+                      <option value="smb">SMB (51-500)</option>
+                      <option value="enterprise">Enterprise (500+)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Budget Range</label>
+                    <select value={newBrandBudget} onChange={e => setNewBrandBudget(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500">
+                      <option value="low">Low ($500–$2K)</option>
+                      <option value="mid">Mid ($2K–$10K)</option>
+                      <option value="high">High ($10K–$50K)</option>
+                      <option value="enterprise">Enterprise ($50K+)</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2 space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Description</label>
+                    <textarea rows={2} placeholder="Brief brand description" value={newBrandDescription} onChange={e => setNewBrandDescription(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500 resize-none" />
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-1">
+                  <button onClick={handleAddBrandAccount} disabled={addingBrandAccount} className="px-5 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-bold hover:bg-violet-500 disabled:opacity-50 transition-colors cursor-pointer shadow">
+                    {addingBrandAccount ? "Submitting..." : "Submit for Verification"}
+                  </button>
+                  <button onClick={() => { setShowBrandAddForm(false); setBrandAccError(null); }} className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Accounts List */}
+            {brandAccountsLoading ? (
+              <div className="py-12 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-violet-600" />
+              </div>
+            ) : brandAccounts.length === 0 ? (
+              <div className="text-center py-14 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl">
+                <div className="w-14 h-14 bg-violet-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-7 h-7 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                </div>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">No brand accounts added yet. Click <strong>Add Brand</strong> to get started.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {brandAccounts.map((acc: any) => (
+                  <div key={acc.id} className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white text-sm font-black shadow-md shrink-0">
+                      {acc.companyName?.[0]?.toUpperCase() || "B"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-slate-900 dark:text-white text-sm">{acc.companyName}</p>
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                          acc.status === "verified" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" :
+                          acc.status === "rejected" ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30" :
+                          "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                        }`}>{acc.status}</span>
+                      </div>
+                      <div className="flex gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
+                        <span className="capitalize">{acc.category}</span>
+                        <span className="capitalize">{acc.brandSize}</span>
+                        {acc.instagramPage && <span>@{acc.instagramPage}</span>}
+                      </div>
+                      {acc.verificationNote && (
+                        <p className="text-[10px] text-rose-500 mt-1">Admin note: {acc.verificationNote}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDeleteBrandAccount(acc.id)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              <span className="font-bold text-slate-700 dark:text-slate-300">ℹ️ How it works: </span>
+              After submitting, an admin will verify your brand account. Once approved, you can select it as the posting brand when creating campaigns.
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -157,7 +157,7 @@ export class BrandController {
     try {
       const user = c.get("user");
       if (!user) return sendError(c, "Unauthorized", 401);
-      const influencerId = c.req.param("influencerId");
+      const influencerId = c.req.param("influencerId") || "";
       const result = await BrandService.unsaveInfluencer(c.env, user.id, influencerId);
       return sendSuccess(c, result, "Influencer unsaved");
     } catch (error: any) {

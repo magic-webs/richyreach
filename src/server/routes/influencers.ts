@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { InfluencerController } from "../controllers/influencer.controller";
+import { InfluencerAccountsController } from "../controllers/influencer-accounts.controller";
 import { requireAuth } from "../middlewares/auth";
 import { requireRole } from "../middlewares/role";
 import { rateLimiter } from "../middlewares/rateLimiter";
@@ -20,10 +21,22 @@ const influencerRouter = new Hono<HonoEnv>()
   .post("/save-campaign", requireRole(["influencer"]), InfluencerController.saveCampaign)
   .delete("/save-campaign/:campaignId", requireAuth(), requireRole(["influencer"]), InfluencerController.unsaveCampaign)
 
+  // ── Multi-account sub-routes ─────────────────────────────────────
+  .use("/accounts", requireAuth())
+  .get("/accounts", requireRole(["influencer"]), InfluencerAccountsController.listAccounts)
+  .post("/accounts", requireRole(["influencer"]), InfluencerAccountsController.addAccount)
+
+  .use("/accounts/:id", requireAuth())
+  .put("/accounts/:id", requireRole(["influencer"]), InfluencerAccountsController.updateAccount)
+  .delete("/accounts/:id", requireRole(["influencer"]), InfluencerAccountsController.deleteAccount)
+
   // ── Influencer-only routes ───────────────────────────────────────
   .use("/profile", requireAuth())
   .post("/profile", requireRole(["influencer"]), InfluencerController.createOrUpdateProfile)
   .put("/profile", requireRole(["influencer"]), InfluencerController.createOrUpdateProfile)
+
+  .use("/sync-instagram", requireAuth())
+  .post("/sync-instagram", requireRole(["influencer"]), InfluencerController.syncInstagram)
 
   .use("/dashboard", requireAuth())
   .get("/dashboard", requireRole(["influencer"]), InfluencerController.getDashboard)

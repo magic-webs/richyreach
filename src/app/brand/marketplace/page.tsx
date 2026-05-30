@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { useMockAuth } from "../../layout-shell";
+import { useAuth } from "../../layout-shell";
 import { api } from "@/lib/api-client";
 import { ReachScoreRing } from "@/components/ui/reach-score-ring";
 
@@ -294,7 +294,7 @@ function CreatorModal({
 // Main Brand Marketplace Page
 // ──────────────────────────────────────────────────────────────
 export default function BrandMarketplacePage() {
-  const { user } = useMockAuth();
+  const { user } = useAuth();
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);

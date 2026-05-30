@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { useMockAuth } from "@/app/layout-shell";
+import { useAuth } from "@/app/layout-shell";
 import { api } from "@/lib/api-client";
 import { Input } from "@/components/ui/input";
 import { GlassButton } from "@/components/ui/glass-button";
 
 export default function ChatPage() {
-  const { user } = useMockAuth();
+  const { user } = useAuth();
   const [rooms, setRooms] = useState<any[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);

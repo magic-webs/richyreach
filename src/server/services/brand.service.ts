@@ -73,6 +73,8 @@ export class BrandService {
       targetAudience?: string | null;
       requirements?: string | null;
       expectedReach?: number;
+      allowFraction?: boolean;
+      brandAccountId?: string | null;
     }
   ) {
     const db = getDb(env);
@@ -93,6 +95,8 @@ export class BrandService {
       campaignType: campaignData.campaignType,
       targetAudience: campaignData.targetAudience,
       requirements: campaignData.requirements,
+      allowFraction: campaignData.allowFraction || false,
+      brandAccountId: campaignData.brandAccountId || null,
       status: "active" as const, // active on creation
       expectedReach: campaignData.expectedReach || 0,
       createdAt: new Date(),
@@ -355,14 +359,29 @@ export class BrandService {
       .orderBy(desc(schema.campaigns.createdAt))
       .limit(5);
 
+    // 5. Total Applicants
+    const applicantsCount = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.campaignApplications)
+      .innerJoin(schema.campaigns, eq(schema.campaignApplications.campaignId, schema.campaigns.id))
+      .where(eq(schema.campaigns.brandId, brandId))
+      .get();
+
+    // 6. Total Invites Sent
+    const invitesCount = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.campaignInvites)
+      .where(eq(schema.campaignInvites.brandId, brandId))
+      .get();
+
     return {
       activeCampaigns: campaignsCount?.count || 0,
       totalSpend: spendSum?.total || 0,
       totalReach: reachSum?.total || 0,
       campaigns: campaignList,
       influencerStats: {
-        totalApplicants: 12, // Derived / mock for UX
-        totalInvitesSent: 5,
+        totalApplicants: applicantsCount?.count || 0,
+        totalInvitesSent: invitesCount?.count || 0,
       },
     };
   }

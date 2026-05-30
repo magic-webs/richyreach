@@ -22,23 +22,13 @@ export class PaymentService {
       throw new Error("Campaign not found or not owned by this brand");
     }
 
-    const paymentId = crypto.randomUUID();
-    const mockSessionId = `cs_test_${crypto.randomUUID().replace(/-/g, "")}`;
+    // Ensure Stripe is configured before creating a session
+    const stripeKey = env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      throw new Error("Stripe credentials missing in environment variables.");
+    }
     
-    await db.insert(schema.payments).values({
-      id: paymentId,
-      campaignId,
-      amount,
-      status: "pending",
-      stripePaymentIntentId: mockSessionId,
-      createdAt: new Date(),
-    });
-
-    return {
-      paymentId,
-      sessionId: mockSessionId,
-      url: `https://checkout.stripe.com/c/pay/${mockSessionId}?amount=${amount}`,
-    };
+    throw new Error("Stripe integration not implemented yet. Cannot create real payment session.");
   }
 
   static async handleWebhook(env: Record<string, any>, payload: any) {

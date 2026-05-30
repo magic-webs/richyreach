@@ -3,6 +3,10 @@ import { InfluencerService } from "../services/influencer.service";
 import { influencerProfileSchema, applyCampaignSchema } from "../validators/influencer";
 import { sendSuccess, sendError, sendPaginated } from "../utils/response";
 import { HonoEnv } from "../types";
+import { eq, and } from "drizzle-orm";
+import { getDb } from "../db";
+import * as schema from "../db/schema";
+import { fetchInstagramProfile } from "../utils/instagram-api";
 
 export class InfluencerController {
   static async getInfluencers(c: Context<HonoEnv>) {
@@ -180,7 +184,7 @@ export class InfluencerController {
     try {
       const user = c.get("user");
       if (!user) return sendError(c, "Unauthorized", 401);
-      const campaignId = c.req.param("campaignId");
+      const campaignId = c.req.param("campaignId") || "";
       const result = await InfluencerService.unsaveCampaign(c.env, user.id, campaignId);
       return sendSuccess(c, result, "Campaign unsaved");
     } catch (error: any) {
@@ -196,6 +200,68 @@ export class InfluencerController {
       return sendSuccess(c, data, "Saved campaigns retrieved");
     } catch (error: any) {
       return sendError(c, error.message || "Failed to fetch saved campaigns", 500);
+    }
+  }
+
+  static async syncInstagram(c: Context<HonoEnv>) {
+    try {
+      const user = c.get("user");
+      if (!user) return sendError(c, "Unauthorized", 401);
+
+      const db = getDb(c.env);
+      const account = await db
+        .select()
+        .from(schema.accounts)
+        .where(
+          and(
+            eq(schema.accounts.userId, user.id),
+            eq(schema.accounts.providerId, "instagram")
+          )
+        )
+        .get();
+
+      if (!account || !account.accessToken) {
+        return sendError(c, "Instagram account not connected", 400);
+      }
+
+      // Fetch from API
+      const profileData = await fetchInstagramProfile(account.accountId, account.accessToken);
+
+      // Update InfluencerProfile
+      const existingProfile = await db
+        .select()
+        .from(schema.influencerProfiles)
+        .where(eq(schema.influencerProfiles.userId, user.id))
+        .get();
+
+      const updateData = {
+        instagramHandle: profileData.instagramHandle,
+        followers: profileData.followers,
+        engagementRate: profileData.engagementRate,
+        niche: profileData.niche,
+        avgViews: profileData.avgViews,
+        level: profileData.level,
+      };
+
+      if (!existingProfile) {
+        await db.insert(schema.influencerProfiles).values({
+          userId: user.id,
+          ...updateData,
+          pricing: 0,
+          verified: false,
+        });
+      } else {
+        await db
+          .update(schema.influencerProfiles)
+          .set(updateData)
+          .where(eq(schema.influencerProfiles.userId, user.id));
+      }
+
+      // Return updated profile
+      const updated = await InfluencerService.getInfluencerById(c.env, user.id);
+      return sendSuccess(c, updated, "Instagram profile synced successfully");
+    } catch (error: any) {
+      return sendError(c, error.message || "Failed to sync Instagram profile", 500);
     }
   }
 }

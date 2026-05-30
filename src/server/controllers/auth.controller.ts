@@ -19,8 +19,21 @@ export class AuthController {
         return sendError(c, "Validation failed", 400, validation.error.format());
       }
 
-      const { identifier, method } = validation.data;
+      const { identifier, method, mode } = validation.data;
       const db = getDb(c.env);
+
+      // If it's a login attempt, verify the user exists first
+      if (mode === "login") {
+        const existingUser = await db
+          .select()
+          .from(schema.users)
+          .where(eq(schema.users.email, identifier.toLowerCase().trim()))
+          .get();
+
+        if (!existingUser) {
+          return sendError(c, "Account not found. Please register first.", 404);
+        }
+      }
 
       // Generate a 6-digit verification code
       const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -213,6 +226,14 @@ export class AuthController {
         sameSite: "Lax",
         maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
       });
+      // Set better-auth compatible cookie for OAuth linking
+      setCookie(c, "better-auth.session_token", sessionToken, {
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        sameSite: "Lax",
+        maxAge: 30 * 24 * 60 * 60,
+      });
 
       // Response payload mirrors what client expects
       return sendSuccess(
@@ -254,6 +275,7 @@ export class AuthController {
 
       // Clear cookie
       deleteCookie(c, "reelio_session", { path: "/" });
+      deleteCookie(c, "better-auth.session_token", { path: "/" });
 
       return sendSuccess(c, null, "Logged out successfully");
     } catch (error: any) {
@@ -276,25 +298,7 @@ export class AuthController {
         return sendError(c, "No active session token provided", 401);
       }
 
-      // Support Mock auth session retrieval for development ease
-      if (token.startsWith("mock-")) {
-        const mockRole = token.replace("mock-", "") as "influencer" | "brand" | "admin";
-        const mockId = `mock_${mockRole}_id`;
-        return sendSuccess(c, {
-          session: {
-            id: `mock_session_${mockRole}`,
-            userId: mockId,
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-          },
-          user: {
-            id: mockId,
-            name: `Mock ${mockRole.charAt(0).toUpperCase() + mockRole.slice(1)}`,
-            email: `${mockRole}@reelio-mock.com`,
-            role: mockRole,
-            image: `https://api.dicebear.com/7.x/adventurer/svg?seed=${mockRole}`,
-          }
-        }, "Active mock session retrieved");
-      }
+
 
       // Query real session
       const session = await db

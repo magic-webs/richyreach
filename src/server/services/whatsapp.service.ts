@@ -14,8 +14,7 @@ export class WhatsAppService {
     console.log(`==================================================\n`);
 
     if (!accountSid || !authToken) {
-      console.log("[WHATSAPP SERVICE] Twilio credentials missing in environment variables. Falling back to local console mock.");
-      return { success: true, mocked: true, code };
+      throw new Error("Twilio credentials missing in environment variables.");
     }
 
     try {

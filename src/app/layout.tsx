@@ -9,12 +9,7 @@ const montserrat = Montserrat({
 	subsets: ["latin"],
 });
 
-const cormorantGaramond = Cormorant_Garamond({
-	variable: "--font-serif",
-	subsets: ["latin"],
-	weight: ["300", "400", "500", "600", "700"],
-	style: ["normal", "italic"],
-});
+
 
 export const metadata: Metadata = {
 	title: "Richy Reach - Premium Brand & Influencer Collaboration Platform",
@@ -31,7 +26,7 @@ export default function RootLayout({
 			<head>
 				<link rel="icon" href="/favicon.svg" type="image/svg+xml"></link>
 			</head>
-			<body className={`${montserrat.variable} ${cormorantGaramond.variable} ${montserrat.className} antialiased bg-background text-foreground`}>
+			<body className={`${montserrat.variable} ${montserrat.className} antialiased bg-background text-foreground`}>
 				<Providers>
 					<LayoutShell>{children}</LayoutShell>
 				</Providers>

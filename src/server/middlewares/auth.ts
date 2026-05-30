@@ -36,66 +36,6 @@ export const requireAuth = (): MiddlewareHandler<HonoEnv> => {
       }
 
 
-      // 1. Fallback for easier development testing (mock tokens)
-      if (token.startsWith("mock-")) {
-        const mockRole = token.replace("mock-", "") as "influencer" | "brand" | "admin";
-        const mockId = `mock_${mockRole}_id`;
-        
-        // Ensure mock user exists in the database
-        try {
-          const existingUser = await db.select().from(schema.users).where(eq(schema.users.id, mockId)).get();
-          if (!existingUser) {
-            await db.insert(schema.users).values({
-              id: mockId,
-              name: `Mock ${mockRole.charAt(0).toUpperCase() + mockRole.slice(1)}`,
-              email: `${mockRole}@reelio-mock.com`,
-              role: mockRole,
-              image: `https://api.dicebear.com/7.x/adventurer/svg?seed=${mockRole}`,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            });
-            
-            // Seed a default profile for the mock user to prevent relation queries from breaking
-            if (mockRole === "influencer") {
-              await db.insert(schema.influencerProfiles).values({
-                userId: mockId,
-                instagramHandle: `mock_influencer_ig`,
-                followers: 52000,
-                engagementRate: 4.8,
-                niche: "Lifestyle",
-                pricing: 12000,
-                avgViews: 85000,
-                avgLikes: 2496,
-                verified: true,
-                level: "mid",
-                reachScore: 62,
-                country: "India",
-                postingFrequency: 5.0,
-                growthRate: 3.2,
-              });
-
-            } else if (mockRole === "brand") {
-              await db.insert(schema.brandProfiles).values({
-                userId: mockId,
-                companyName: "Mock Brand Co.",
-                website: "https://richyreach.com",
-                category: "Fashion",
-                description: "Mock brand account for developer testing.",
-              });
-            }
-          }
-        } catch (e) {
-          console.error("Failed to auto-seed mock user:", e);
-        }
-
-        c.set("user", {
-          id: mockId,
-          name: `Mock ${mockRole.charAt(0).toUpperCase() + mockRole.slice(1)}`,
-          email: `${mockRole}@richyreach-mock.com`,
-          role: mockRole,
-        });
-        return await next();
-      }
 
       // 2. Query real session from DB
       const session = await db

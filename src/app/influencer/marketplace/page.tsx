@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { useMockAuth } from "../../layout-shell";
+import { useAuth } from "../../layout-shell";
 import { api } from "@/lib/api-client";
 
 // ──────────────────────────────────────────────────────────────
@@ -272,7 +272,7 @@ function CampaignModal({ campaign, onClose, onApply }: { campaign: Campaign; onC
 // Main Marketplace Page
 // ──────────────────────────────────────────────────────────────
 export default function InfluencerMarketplacePage() {
-  const { user } = useMockAuth();
+  const { user } = useAuth();
   const [view, setView] = useState<"browse" | "applications">("browse");
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [applications, setApplications] = useState<{ applications: Application[]; invites: any[] }>({ applications: [], invites: [] });
@@ -323,7 +323,7 @@ export default function InfluencerMarketplacePage() {
 
   const handleApply = async (campaignId: string, proposal: string) => {
     try {
-      await api.api.influencers.apply[":campaignId"].$post({
+      await (api.api.influencers.apply[":campaignId"].$post as any)({
         param: { campaignId },
         json: { proposal },
       });
