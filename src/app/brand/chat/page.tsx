@@ -83,7 +83,8 @@ export default function ChatPage() {
   useEffect(() => {
     if (!selectedRoom) return;
 
-    const wsUrl = `ws://localhost:4000/chat?roomId=${selectedRoom.roomId}`;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/api/chat/ws?roomId=${selectedRoom.roomId}`; // Adjust if your backend has a different WS path
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
