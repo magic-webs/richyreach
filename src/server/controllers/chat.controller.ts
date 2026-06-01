@@ -29,7 +29,7 @@ export class ChatController {
         return sendError(c, "Validation failed", 400, validation.error.format());
       }
 
-      const room = await ChatService.createRoom(c.env, user.id, validation.data.influencerId);
+      const room = await ChatService.createRoom(c.env, user.id, validation.data.influencerId, validation.data.campaignId);
       return sendSuccess(c, room, "Chat room created successfully", 201);
     } catch (error: any) {
       return sendError(c, error.message || "Failed to create chat room", 500);

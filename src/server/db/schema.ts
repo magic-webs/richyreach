@@ -13,6 +13,7 @@ export const users = sqliteTable("users", {
   image: text("image"),
   role: text("role").$type<"influencer" | "brand" | "admin">().notNull().default("influencer"),
   bio: text("bio"),
+  walletBalance: integer("wallet_balance").notNull().default(50000), // Default welcome bonus of 500 INR (50000 paise)
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
@@ -342,6 +343,17 @@ export const payments = sqliteTable("payments", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
+export const walletTransactions = sqliteTable("wallet_transactions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  amount: integer("amount").notNull(), // in paise
+  type: text("type").$type<"credit" | "debit">().notNull(),
+  description: text("description"), // e.g. "Welcome Bonus", "Razorpay Deposit"
+  reference: text("reference"), // e.g. Razorpay Payment ID or Order ID
+  status: text("status").notNull().default("completed"), // "pending", "completed", "failed"
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
 // ==========================================
 // Relations Definitions
 // ==========================================
@@ -359,6 +371,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   accounts: many(accounts),
   sentMessages: many(messages),
   notifications: many(notifications),
+  walletTransactions: many(walletTransactions),
 }));
 
 export const influencerProfilesRelations = relations(influencerProfiles, ({ one, many }) => ({
@@ -427,6 +440,13 @@ export const campaignInvitesRelations = relations(campaignInvites, ({ one }) => 
   campaign: one(campaigns, {
     fields: [campaignInvites.campaignId],
     references: [campaigns.id],
+  }),
+}));
+
+export const walletTransactionsRelations = relations(walletTransactions, ({ one }) => ({
+  user: one(users, {
+    fields: [walletTransactions.userId],
+    references: [users.id],
   }),
 }));
 

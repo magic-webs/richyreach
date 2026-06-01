@@ -40,7 +40,8 @@ export class ChatService {
   static async createRoom(
     env: Record<string, any>,
     brandId: string,
-    influencerId: string
+    influencerId: string,
+    campaignId?: string
   ) {
     const db = getDb(env);
 
@@ -51,7 +52,21 @@ export class ChatService {
       .where(and(eq(schema.chatRooms.brandId, brandId), eq(schema.chatRooms.influencerId, influencerId)))
       .get();
 
-    if (existing) return existing;
+    if (existing) {
+      if (campaignId) {
+        await db
+          .update(schema.campaignApplications)
+          .set({ status: "accepted" })
+          .where(
+            and(
+              eq(schema.campaignApplications.campaignId, campaignId),
+              eq(schema.campaignApplications.influencerId, influencerId)
+            )
+          )
+          .run();
+      }
+      return existing;
+    }
 
     const roomId = crypto.randomUUID();
     const newRoom = {
@@ -61,7 +76,21 @@ export class ChatService {
       createdAt: new Date(),
     };
 
-    await db.insert(schema.chatRooms).values(newRoom);
+    await db.insert(schema.chatRooms).values(newRoom).run();
+
+    if (campaignId) {
+      await db
+        .update(schema.campaignApplications)
+        .set({ status: "accepted" })
+        .where(
+          and(
+            eq(schema.campaignApplications.campaignId, campaignId),
+            eq(schema.campaignApplications.influencerId, influencerId)
+          )
+        )
+        .run();
+    }
+    
     return newRoom;
   }
 

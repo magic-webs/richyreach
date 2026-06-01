@@ -105,6 +105,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         { name: "Campaigns", href: "/brand/campaigns/create", icon: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
         { name: "Marketplace", href: "/brand/marketplace", icon: Icons.Marketplace },
         { name: "Calculators", href: "/calculators", icon: Icons.Calculator },
+        { name: "Wallet", href: "/brand/wallet", icon: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg> },
         { name: "Messaging", href: "/brand/chat", icon: Icons.Chat },
         { name: "Profile", href: "/brand/profile", icon: Icons.Profile }
       );
@@ -113,7 +114,8 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         { name: "Dashboard", href: "/influencer/dashboard", icon: Icons.Dashboard },
         { name: "Marketplace", href: "/influencer/marketplace", icon: Icons.Marketplace },
         { name: "Earnings", href: "/influencer/earnings", icon: Icons.Earnings },
-        // { name: "Messaging", href: "/influencer/chat", icon: Icons.Chat },
+        { name: "Wallet", href: "/influencer/wallet", icon: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg> },
+        { name: "Messaging", href: "/influencer/chat", icon: Icons.Chat },
         { name: "Profile", href: "/influencer/profile", icon: Icons.Profile }
       );
     } else { // admin

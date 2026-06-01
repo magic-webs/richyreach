@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../../../layout-shell";
 import { api } from "@/lib/api-client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +16,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function CampaignDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = React.use(params);
   const id = resolvedParams.id;
-  const { user } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -32,7 +31,7 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
       if (!res.ok) throw new Error("Failed to fetch details");
       const result = await res.json();
       if (!result.success) throw new Error(result.error as string || "Failed to fetch details");
-      
+
       // Initialize edit form when data arrives
       setEditForm({
         title: result.data.campaign.title,
@@ -52,7 +51,7 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
   const updateMutation = useMutation({
     mutationFn: async (updatedData: any) => {
       const budgetCents = Math.round(parseFloat(updatedData.budget) * 100) || 0;
-      
+
       const res = await fetch(`/api/campaigns/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -85,12 +84,14 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
   const handleCreateChat = async (influencerId: string) => {
     try {
       const res = await api.api.chat.room.$post({
-        json: { influencerId },
+        json: { influencerId, campaignId: id },
       });
       if (res.ok) {
         const result = await res.json();
         if (result.success) {
-          router.push("/chat");
+          // Optimistically invalidate query so it shows as accepted when they come back
+          queryClient.invalidateQueries({ queryKey: ["campaignDetails", id] });
+          router.push("/brand/chat");
         }
       }
     } catch (err) {
@@ -309,9 +310,16 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
                         <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">PROPOSAL</p>
                         <p className="text-sm text-slate-700 dark:text-slate-300 italic mt-1 bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border border-slate-100 dark:border-slate-800/60">"{app.proposal}"</p>
                       </div>
-                      <button onClick={() => handleCreateChat(app.influencerId)} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 px-6 rounded-xl text-sm shadow-sm shadow-primary/20 shrink-0 transition-all cursor-pointer">
-                        Accept & Chat
-                      </button>
+                      {app.status === "accepted" ? (
+                        <button onClick={() => router.push("/brand/chat")} className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 font-bold py-3 px-6 rounded-xl text-sm border border-emerald-500/20 shrink-0 transition-all cursor-pointer flex items-center justify-center gap-2">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                          Open Chat
+                        </button>
+                      ) : (
+                        <button onClick={() => handleCreateChat(app.influencerId)} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 px-6 rounded-xl text-sm shadow-sm shadow-primary/20 shrink-0 transition-all cursor-pointer">
+                          Accept & Chat
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>

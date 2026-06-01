@@ -116,7 +116,8 @@ export class InfluencerController {
         c.env,
         user.id,
         campaignId,
-        validation.data.proposal
+        validation.data.proposal,
+        validation.data.influencerAccountId
       );
 
       return sendSuccess(c, application, "Successfully applied to campaign", 201);

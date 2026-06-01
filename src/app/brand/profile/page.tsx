@@ -21,8 +21,8 @@ const BUDGET_RANGES = [{ value: "low", label: "Low ($500–$2K/campaign)" }, { v
 function StatCard({ label, value, icon, color = "text-slate-900 dark:text-white" }: { label: string; value: string; icon: React.ReactNode; color?: string }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-white/80 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800/60 backdrop-blur-md p-5 flex items-center gap-4 shadow-md shadow-slate-100/40 dark:shadow-none hover:scale-[1.02] transition-all group">
-      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-violet-500/3 opacity-0 group-hover:opacity-100 transition-opacity" />
-      <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-500 dark:text-violet-400">{icon}</div>
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent to-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-primary flex items-center justify-center text-primary dark:text-primary">{icon}</div>
       <div>
         <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">{label}</p>
         <p className={`text-xl font-black mt-0.5 ${color}`}>{value}</p>
@@ -68,7 +68,7 @@ export default function BrandProfilePage() {
   const [linkedin, setLinkedin] = useState("");
 
   const handleLogout = async () => {
-    try { await fetch("/api/auth/logout", { method: "POST" }); } catch (_) {}
+    try { await fetch("/api/auth/logout", { method: "POST" }); } catch (_) { }
     localStorage.removeItem("reelio_session_token");
     localStorage.removeItem("reelio_mock_user");
     router.push("/authentication");
@@ -111,7 +111,7 @@ export default function BrandProfilePage() {
         const r = await res.json();
         if (r.success && r.data) setCampaigns(r.data as any[]);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const fetchSaved = async () => {
@@ -121,7 +121,7 @@ export default function BrandProfilePage() {
         const r = await res.json() as any;
         if (r.success && r.data) setSavedInfluencers(r.data as any[]);
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   useEffect(() => {
@@ -222,8 +222,8 @@ export default function BrandProfilePage() {
   if (user.role !== "brand") {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8 bg-white/80 dark:bg-slate-900/30 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-xl backdrop-blur-md">
-        <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+        <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mb-4">
+          <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
         </div>
         <h2 className="text-xl font-bold text-slate-900 dark:text-slate-200 mb-2">Access Restricted</h2>
         <p className="text-slate-500 dark:text-slate-400 max-w-md">This page is for brands. Switch to <strong>Brand View</strong> in the sandbox controls.</p>
@@ -234,8 +234,8 @@ export default function BrandProfilePage() {
   if (loading) return (
     <div className="flex items-center justify-center min-h-[50vh]">
       <div className="relative flex h-12 w-12 items-center justify-center">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
-        <span className="relative inline-flex rounded-full h-7 w-7 bg-violet-600" />
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+        <span className="relative inline-flex rounded-full h-7 w-7 bg-primary" />
       </div>
     </div>
   );
@@ -258,9 +258,9 @@ export default function BrandProfilePage() {
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
 
       {/* ── Hero Header ── */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-xl bg-gradient-to-br from-white/90 via-violet-50/30 to-slate-50/80 dark:from-slate-900/80 dark:via-violet-950/15 dark:to-slate-900/60 shadow-xl shadow-slate-200/50 dark:shadow-none p-6 md:p-8">
-        <div className="absolute -top-20 -right-20 w-72 h-72 bg-violet-500/10 rounded-full blur-[90px] pointer-events-none" />
-        <div className="absolute -bottom-10 left-10 w-52 h-52 bg-indigo-500/5 rounded-full blur-[60px] pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-xl bg-gradient-to-br from-white/90 via-primary to-slate-50/80 dark:from-slate-900/80 dark:via-primary dark:to-slate-900/60 shadow-xl shadow-slate-200/50 dark:shadow-none p-6 md:p-8">
+        <div className="absolute -top-20 -right-20 w-72 h-72 bg-primary rounded-full blur-[90px] pointer-events-none" />
+        <div className="absolute -bottom-10 left-10 w-52 h-52 bg-primary/80 rounded-full blur-[60px] pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
           <div className="flex items-center gap-5">
@@ -268,10 +268,10 @@ export default function BrandProfilePage() {
               <img
                 src={logo || `https://api.dicebear.com/7.x/initials/svg?seed=${companyName || "Brand"}`}
                 alt={companyName || "Brand"}
-                className="w-20 h-20 rounded-2xl border-2 border-violet-500/30 bg-white dark:bg-slate-800 p-1.5 object-contain shadow-lg"
+                className="w-20 h-20 rounded-2xl border-2 border-primary bg-white dark:bg-slate-800 p-1.5 object-contain shadow-lg"
               />
               {profile?.verified && (
-                <span className="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-violet-500 rounded-full flex items-center justify-center shadow">
+                <span className="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow">
                   <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                 </span>
               )}
@@ -282,10 +282,10 @@ export default function BrandProfilePage() {
               </h1>
               <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{user.name} · Brand Partner</p>
               {profile?.category && (
-                <span className="inline-block mt-2 text-xs font-semibold text-violet-600 dark:text-violet-400 bg-violet-500/10 px-2.5 py-0.5 rounded-full border border-violet-500/20">{profile.category}</span>
+                <span className="inline-block mt-2 text-xs font-semibold text-primary dark:text-primary bg-primary px-2.5 py-0.5 rounded-full border border-primary">{profile.category}</span>
               )}
               {website && (
-                <a href={website} target="_blank" rel="noreferrer" className="flex items-center gap-1 mt-1 text-xs text-violet-500 hover:text-violet-400 transition-colors">
+                <a href={website} target="_blank" rel="noreferrer" className="flex items-center gap-1 mt-1 text-xs text-primary hover:text-primary transition-colors">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                   {website.replace(/https?:\/\//, "").split("/")[0]}
                 </a>
@@ -316,7 +316,7 @@ export default function BrandProfilePage() {
       {/* ── Tabs ── */}
       <div className="flex gap-1 bg-white/60 dark:bg-slate-900/30 border border-slate-200/60 dark:border-slate-800/50 backdrop-blur-md rounded-2xl p-1.5 shadow-lg overflow-x-auto">
         {tabs.map((t) => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex-1 min-w-max px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === t.id ? "bg-violet-600 text-white shadow-md shadow-violet-600/20" : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50"}`}>
+          <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex-1 min-w-max px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === t.id ? "bg-primary text-white shadow-md shadow-primary" : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50"}`}>
             {t.label}
           </button>
         ))}
@@ -327,12 +327,12 @@ export default function BrandProfilePage() {
         <div className="space-y-6">
           {!profile ? (
             <div className="text-center py-16 bg-white/60 dark:bg-slate-900/30 border border-dashed border-slate-300 dark:border-slate-700 rounded-3xl">
-              <div className="w-14 h-14 bg-violet-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <svg className="w-7 h-7 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+              <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg className="w-7 h-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
               </div>
               <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-1">Register your Brand</h3>
               <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">Go to Settings to set up your brand profile and start running campaigns.</p>
-              <button onClick={() => setActiveTab("settings")} className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm shadow-lg shadow-violet-500/20 hover:shadow-violet-500/40 transition-all">Go to Settings →</button>
+              <button onClick={() => setActiveTab("settings")} className="bg-primary text-white font-bold px-5 py-2.5 rounded-xl text-sm shadow-lg shadow-primary hover:shadow-primary transition-all">Go to Settings →</button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -341,7 +341,7 @@ export default function BrandProfilePage() {
                 <div className="text-center">
                   <img src={logo || `https://api.dicebear.com/7.x/initials/svg?seed=${companyName}`} alt="Brand" className="w-20 h-20 rounded-2xl mx-auto border border-slate-200 dark:border-slate-700 p-2 bg-white dark:bg-slate-800 object-contain shadow-md" />
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-3">{companyName}</h3>
-                  <span className="inline-block text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-500/10 px-2.5 py-0.5 mt-1.5 rounded-full border border-violet-500/20">{category}</span>
+                  <span className="inline-block text-[10px] font-bold text-primary dark:text-primary bg-primary px-2.5 py-0.5 mt-1.5 rounded-full border border-primary">{category}</span>
                   <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mt-3 max-w-xs mx-auto">{description || "No description provided."}</p>
                 </div>
                 <div className="space-y-2.5 text-xs border-t border-slate-100 dark:border-slate-800 pt-4">
@@ -361,7 +361,7 @@ export default function BrandProfilePage() {
               {/* Stats */}
               <div className="md:col-span-2 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <StatCard label="Active Campaigns" value={activeCampaigns.length.toString()} icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>} color="text-violet-600 dark:text-violet-400" />
+                  <StatCard label="Active Campaigns" value={activeCampaigns.length.toString()} icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>} color="text-primary dark:text-primary" />
                   <StatCard label="Saved Influencers" value={savedInfluencers.length.toString()} icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>} color="text-rose-500 dark:text-rose-400" />
                 </div>
                 {/* Recent campaigns preview */}
@@ -409,7 +409,7 @@ export default function BrandProfilePage() {
                     <span>Expected Reach: <strong className="text-slate-700 dark:text-slate-300">{fmt(c.expectedReach)}</strong></span>
                     <span>{new Date(c.createdAt).toLocaleDateString()}</span>
                   </div>
-                  <div className="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full" style={{ width: "40%" }} /></div>
+                  <div className="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-primary rounded-full" style={{ width: "40%" }} /></div>
                 </div>
               ))}
             </div>
@@ -454,7 +454,7 @@ export default function BrandProfilePage() {
           ].map((m) => (
             <div key={m.label} className="bg-white/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none text-center">
               <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{m.label}</p>
-              <p className="text-3xl font-black text-violet-600 dark:text-violet-400 mt-2">{m.val}</p>
+              <p className="text-3xl font-black text-primary dark:text-primary mt-2">{m.val}</p>
             </div>
           ))}
           <div className="md:col-span-3 bg-white/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 rounded-3xl p-6 backdrop-blur-md shadow-lg dark:shadow-none">
@@ -465,7 +465,7 @@ export default function BrandProfilePage() {
                   <div key={c.id} className="flex items-center gap-3 text-xs">
                     <span className="w-32 truncate font-semibold text-slate-600 dark:text-slate-300">{c.title}</span>
                     <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-violet-500 to-indigo-400 rounded-full" style={{ width: `${Math.min(100, (c.budget / (Math.max(...campaigns.map((x: any) => x.budget)) || 1)) * 100)}%` }} />
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${Math.min(100, (c.budget / (Math.max(...campaigns.map((x: any) => x.budget)) || 1)) * 100)}%` }} />
                     </div>
                     <span className="font-bold text-slate-600 dark:text-slate-300 w-16 text-right">${fmt(c.budget / 100)}</span>
                   </div>
@@ -515,13 +515,13 @@ export default function BrandProfilePage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="website" className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Website URL</Label>
-              <Input id="website" placeholder="https://example.com" value={website} onChange={(e) => setWebsite(e.target.value)} className="bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 rounded-xl focus:border-violet-500" required />
+              <Input id="website" placeholder="https://example.com" value={website} onChange={(e) => setWebsite(e.target.value)} className="bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 rounded-xl focus:border-primary" required />
               <p className="text-[10px] text-slate-400">On save, metadata is auto-scraped from your website.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-2">
                 <Label htmlFor="companyName" className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Company Name</Label>
-                <Input id="companyName" placeholder="My Company Inc." value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 rounded-xl focus:border-violet-500" required />
+                <Input id="companyName" placeholder="My Company Inc." value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 rounded-xl focus:border-primary" required />
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Category</Label>
@@ -557,7 +557,7 @@ export default function BrandProfilePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="description" className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">About Brand</Label>
-              <textarea id="description" rows={4} placeholder="Tell creators about your brand..." value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-3.5 text-sm bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl focus:border-violet-500 focus:ring-1 focus:ring-violet-500/20 focus:outline-none placeholder-slate-400 resize-none" />
+              <textarea id="description" rows={4} placeholder="Tell creators about your brand..." value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-3.5 text-sm bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder-slate-400 resize-none" />
             </div>
             <div className="space-y-3">
               <Label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Social Links</Label>
@@ -567,7 +567,7 @@ export default function BrandProfilePage() {
                 <Input placeholder="LinkedIn company URL" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} className="bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 rounded-xl" />
               </div>
             </div>
-            <button type="submit" disabled={saving} className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-60 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-violet-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer">
+            <button type="submit" disabled={saving} className="w-full bg-primary hover:from-primary hover:to-primary disabled:opacity-60 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-primary transition-all flex items-center justify-center gap-2 cursor-pointer">
               {saving ? (
                 <><svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>Scraping & Saving...</>
               ) : (
@@ -588,7 +588,7 @@ export default function BrandProfilePage() {
               </div>
               <button
                 onClick={() => { setShowBrandAddForm(!showBrandAddForm); setBrandAccError(null); }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-xs font-bold hover:bg-violet-500 transition-colors shadow cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary transition-colors shadow cursor-pointer"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
                 Add Brand
@@ -603,46 +603,61 @@ export default function BrandProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold uppercase text-slate-500">Company Name *</label>
-                    <input placeholder="Acme Corp" value={newBrandName} onChange={e => setNewBrandName(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500" />
+                    <input placeholder="Acme Corp" value={newBrandName} onChange={e => setNewBrandName(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold uppercase text-slate-500">Website</label>
-                    <input placeholder="https://acme.com" value={newBrandWebsite} onChange={e => setNewBrandWebsite(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500" />
+                    <input placeholder="https://acme.com" value={newBrandWebsite} onChange={e => setNewBrandWebsite(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold uppercase text-slate-500">Category</label>
-                    <select value={newBrandCategory} onChange={e => setNewBrandCategory(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500">
-                      {["Fashion","Technology","Food & Beverage","Health & Wellness","Sports","Beauty","Travel","Entertainment","Finance","Education","Retail","General"].map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                    <Select value={newBrandCategory} onValueChange={(val) => val && setNewBrandCategory(val)}>
+                      <SelectTrigger className="w-full px-3 py-2 h-[38px] text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["Fashion", "Technology", "Food & Beverage", "Health & Wellness", "Sports", "Beauty", "Travel", "Entertainment", "Finance", "Education", "Retail", "General"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold uppercase text-slate-500">Instagram Page</label>
-                    <input placeholder="@handle" value={newBrandInstagram} onChange={e => setNewBrandInstagram(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500" />
+                    <input placeholder="@handle" value={newBrandInstagram} onChange={e => setNewBrandInstagram(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold uppercase text-slate-500">Brand Size</label>
-                    <select value={newBrandSize} onChange={e => setNewBrandSize(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500">
-                      <option value="startup">Startup (1-50)</option>
-                      <option value="smb">SMB (51-500)</option>
-                      <option value="enterprise">Enterprise (500+)</option>
-                    </select>
+                    <Select value={newBrandSize} onValueChange={(val) => val && setNewBrandSize(val)}>
+                      <SelectTrigger className="w-full px-3 py-2 h-[38px] text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="startup">Startup (1-50)</SelectItem>
+                        <SelectItem value="smb">SMB (51-500)</SelectItem>
+                        <SelectItem value="enterprise">Enterprise (500+)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold uppercase text-slate-500">Budget Range</label>
-                    <select value={newBrandBudget} onChange={e => setNewBrandBudget(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500">
-                      <option value="low">Low ($500–$2K)</option>
-                      <option value="mid">Mid ($2K–$10K)</option>
-                      <option value="high">High ($10K–$50K)</option>
-                      <option value="enterprise">Enterprise ($50K+)</option>
-                    </select>
+                    <Select value={newBrandBudget} onValueChange={(val) => val && setNewBrandBudget(val)}>
+                      <SelectTrigger className="w-full px-3 py-2 h-[38px] text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low ($500–$2K)</SelectItem>
+                        <SelectItem value="mid">Mid ($2K–$10K)</SelectItem>
+                        <SelectItem value="high">High ($10K–$50K)</SelectItem>
+                        <SelectItem value="enterprise">Enterprise ($50K+)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="md:col-span-2 space-y-1">
                     <label className="text-[10px] font-bold uppercase text-slate-500">Description</label>
-                    <textarea rows={2} placeholder="Brief brand description" value={newBrandDescription} onChange={e => setNewBrandDescription(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-violet-500 resize-none" />
+                    <textarea rows={2} placeholder="Brief brand description" value={newBrandDescription} onChange={e => setNewBrandDescription(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary resize-none" />
                   </div>
                 </div>
                 <div className="flex gap-3 pt-1">
-                  <button onClick={handleAddBrandAccount} disabled={addingBrandAccount} className="px-5 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-bold hover:bg-violet-500 disabled:opacity-50 transition-colors cursor-pointer shadow">
+                  <button onClick={handleAddBrandAccount} disabled={addingBrandAccount} className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary disabled:opacity-50 transition-colors cursor-pointer shadow">
                     {addingBrandAccount ? "Submitting..." : "Submit for Verification"}
                   </button>
                   <button onClick={() => { setShowBrandAddForm(false); setBrandAccError(null); }} className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
@@ -655,12 +670,12 @@ export default function BrandProfilePage() {
             {/* Accounts List */}
             {brandAccountsLoading ? (
               <div className="py-12 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-violet-600" />
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
               </div>
             ) : brandAccounts.length === 0 ? (
               <div className="text-center py-14 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl">
-                <div className="w-14 h-14 bg-violet-500/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-7 h-7 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-7 h-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                 </div>
                 <p className="text-slate-500 dark:text-slate-400 text-sm">No brand accounts added yet. Click <strong>Add Brand</strong> to get started.</p>
               </div>
@@ -668,17 +683,16 @@ export default function BrandProfilePage() {
               <div className="space-y-3">
                 {brandAccounts.map((acc: any) => (
                   <div key={acc.id} className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white text-sm font-black shadow-md shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white text-sm font-black shadow-md shrink-0">
                       {acc.companyName?.[0]?.toUpperCase() || "B"}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-bold text-slate-900 dark:text-white text-sm">{acc.companyName}</p>
-                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
-                          acc.status === "verified" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" :
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${acc.status === "verified" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" :
                           acc.status === "rejected" ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30" :
-                          "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
-                        }`}>{acc.status}</span>
+                            "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                          }`}>{acc.status}</span>
                       </div>
                       <div className="flex gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
                         <span className="capitalize">{acc.category}</span>

@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../layout-shell";
 import { api } from "@/lib/api-client";
 
@@ -41,7 +43,7 @@ type Application = {
 // Helpers
 // ──────────────────────────────────────────────────────────────
 function fmt(n: number) { return n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n); }
-function fmtBudget(cents: number) { return `$${fmt(cents / 100)}`; }
+function fmtBudget(cents: number) { return `₹${fmt(cents / 100)}`; }
 function timeAgo(date: string) {
   const d = Date.now() - new Date(date).getTime();
   if (d < 3600_000) return `${Math.round(d / 60000)}m ago`;
@@ -162,7 +164,7 @@ function CampaignCard({
         ) : (
           <button
             onClick={() => onApply(campaign)}
-            className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-primary to-rose-700 hover:from-primary/90 hover:to-rose-600 shadow-md shadow-primary/20 hover:shadow-primary/30 transition-all"
+            className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-primary to-rose-700 hover:from-primary/90 hover:to-rose-600 shadow-md shadow-primary/20 hover:shadow-primary/30 transition-all cursor-pointer"
           >
             Apply Now
           </button>
@@ -173,164 +175,72 @@ function CampaignCard({
 }
 
 // ──────────────────────────────────────────────────────────────
-// Campaign Detail Modal
-// ──────────────────────────────────────────────────────────────
-function CampaignModal({ campaign, onClose, onApply }: { campaign: Campaign; onClose: () => void; onApply: (campaignId: string, proposal: string) => void }) {
-  const [proposal, setProposal] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleApply = async () => {
-    if (!proposal.trim()) return;
-    setSubmitting(true);
-    await onApply(campaign.id, proposal);
-    setSubmitting(false);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-300">
-        <div className="p-6 space-y-5">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <img src={campaign.brandLogo || `https://api.dicebear.com/7.x/initials/svg?seed=${campaign.brandName}`} alt={campaign.brandName} className="w-12 h-12 rounded-xl border border-slate-200 dark:border-slate-700 p-1.5 bg-white dark:bg-slate-800 object-contain" />
-              <div>
-                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white leading-tight">{campaign.title}</h2>
-                <p className="text-sm text-slate-400">{campaign.brandName}</p>
-              </div>
-            </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-
-          {/* Tags */}
-          <div className="flex flex-wrap gap-2">
-            <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border ${BUDGET_LABEL(campaign.budget).cls}`}>{fmtBudget(campaign.budget)}</span>
-            <span className="text-[10px] font-black px-2.5 py-1 rounded-lg border text-violet-600 bg-violet-500/10 border-violet-500/20 uppercase">{campaign.campaignType}</span>
-            {campaign.isInvited && <span className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-violet-600 text-white">You were invited!</span>}
-          </div>
-
-          {/* Description */}
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Campaign Brief</p>
-            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{campaign.description}</p>
-          </div>
-
-          {/* Requirements */}
-          {campaign.requirements && (
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Requirements</p>
-              <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{campaign.requirements}</p>
-            </div>
-          )}
-
-          {/* Target Audience */}
-          {campaign.targetAudience && (
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Target Audience</p>
-              <p className="text-sm text-slate-700 dark:text-slate-300">{campaign.targetAudience}</p>
-            </div>
-          )}
-
-          {/* Apply form */}
-          {!campaign.isApplied ? (
-            <div className="space-y-3 border-t border-slate-100 dark:border-slate-800 pt-4">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Your Proposal</p>
-              <textarea
-                value={proposal}
-                onChange={(e) => setProposal(e.target.value)}
-                rows={4}
-                placeholder="Tell the brand why you're a perfect fit. Include your ideas, past experience, and what value you'll bring..."
-                className="w-full p-3.5 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/20 focus:outline-none placeholder-slate-400 resize-none"
-              />
-              <button
-                onClick={handleApply}
-                disabled={!proposal.trim() || submitting}
-                className="w-full py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-primary to-rose-700 hover:from-primary/90 hover:to-rose-600 disabled:opacity-50 shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {submitting ? (
-                  <><svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>Submitting...</>
-                ) : "Submit Application"}
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-              <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-              <span className="text-sm font-bold text-emerald-600">You've already applied!</span>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ──────────────────────────────────────────────────────────────
 // Main Marketplace Page
 // ──────────────────────────────────────────────────────────────
 export default function InfluencerMarketplacePage() {
   const { user } = useAuth();
+  const router = useRouter();
+  
+  const queryClient = useQueryClient();
   const [view, setView] = useState<"browse" | "applications">("browse");
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [applications, setApplications] = useState<{ applications: Application[]; invites: any[] }>({ applications: [], invites: [] });
-  const [loading, setLoading] = useState(true);
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("All Types");
   const [sort, setSort] = useState("recent");
   const [showFilters, setShowFilters] = useState(false);
 
-  const loadCampaigns = useCallback(async () => {
-    try {
-      setLoading(true);
+  const { data: campaigns = [], isLoading: loadingCampaigns } = useQuery({
+    queryKey: ["marketplaceCampaigns", search],
+    queryFn: async () => {
       const res = await api.api.influencers["marketplace-campaigns"].$get({ query: { search, limit: "30" } });
-      if (res.ok) {
-        const r = await res.json();
-        if (r.success && r.data) setCampaigns(r.data as Campaign[]);
-      }
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
-  }, [search]);
+      if (!res.ok) throw new Error("Failed to load campaigns");
+      const r = await res.json();
+      return r.success && r.data ? (r.data as Campaign[]) : [];
+    },
+    enabled: user.role === "influencer",
+  });
 
-  const loadApplications = useCallback(async () => {
-    try {
+  const { data: applications = { applications: [], invites: [] }, isLoading: loadingApplications } = useQuery({
+    queryKey: ["marketplaceApplications"],
+    queryFn: async () => {
       const res = await api.api.influencers.campaigns.$get();
-      if (res.ok) {
-        const r = await res.json();
-        if (r.success) setApplications(r.data as any);
-      }
-    } catch (_) {}
-  }, []);
+      if (!res.ok) throw new Error("Failed to load applications");
+      const r = await res.json();
+      return r.success && r.data ? (r.data as any) : { applications: [], invites: [] };
+    },
+    enabled: user.role === "influencer",
+  });
 
-  useEffect(() => {
-    if (user.role === "influencer") { loadCampaigns(); loadApplications(); }
-    // eslint-disable-next-line
-  }, [user.role]);
-
-  const handleToggleSave = async (campaign: Campaign) => {
-    try {
+  const saveMutation = useMutation({
+    mutationFn: async (campaign: Campaign) => {
       if (campaign.isSaved) {
         await api.api.influencers["save-campaign"][":campaignId"].$delete({ param: { campaignId: campaign.id } });
       } else {
         await api.api.influencers["save-campaign"].$post({ json: { campaignId: campaign.id } });
       }
-      setCampaigns((prev) => prev.map((c) => c.id === campaign.id ? { ...c, isSaved: !c.isSaved } : c));
-    } catch (_) {}
+      return campaign;
+    },
+    onMutate: async (campaign) => {
+      await queryClient.cancelQueries({ queryKey: ["marketplaceCampaigns"] });
+      const previousCampaigns = queryClient.getQueryData(["marketplaceCampaigns", search]);
+      queryClient.setQueryData(["marketplaceCampaigns", search], (old: Campaign[] | undefined) => {
+        if (!old) return old;
+        return old.map((c) => (c.id === campaign.id ? { ...c, isSaved: !c.isSaved } : c));
+      });
+      return { previousCampaigns };
+    },
+    onError: (err, newTodo, context) => {
+      queryClient.setQueryData(["marketplaceCampaigns", search], context?.previousCampaigns);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["marketplaceCampaigns"] });
+    },
+  });
+
+  const handleToggleSave = (campaign: Campaign) => {
+    saveMutation.mutate(campaign);
   };
 
-  const handleApply = async (campaignId: string, proposal: string) => {
-    try {
-      await (api.api.influencers.apply[":campaignId"].$post as any)({
-        param: { campaignId },
-        json: { proposal },
-      });
-      setCampaigns((prev) => prev.map((c) => c.id === campaignId ? { ...c, isApplied: true } : c));
-      await loadApplications();
-    } catch (err) { console.error(err); }
-  };
+  const navToDetail = (c: Campaign) => router.push(`/influencer/campaigns/${c.id}`);
 
   // Filter & sort
   const filtered = campaigns
@@ -358,14 +268,6 @@ export default function InfluencerMarketplacePage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
-      {selectedCampaign && (
-        <CampaignModal
-          campaign={selectedCampaign}
-          onClose={() => setSelectedCampaign(null)}
-          onApply={handleApply}
-        />
-      )}
-
       {/* ── Hero Header ── */}
       <div className="relative overflow-hidden rounded-3xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-xl bg-gradient-to-br from-slate-50/90 via-white/80 to-rose-50/40 dark:from-slate-900/80 dark:via-slate-900/60 dark:to-[#3F030B]/15 shadow-xl shadow-slate-200/50 dark:shadow-none p-6 md:p-8">
         <div className="absolute -top-16 -right-16 w-56 h-56 bg-primary/10 rounded-full blur-[70px] pointer-events-none" />
@@ -426,12 +328,27 @@ export default function InfluencerMarketplacePage() {
       {/* ── Browse View ── */}
       {view === "browse" && (
         <div className="space-y-8">
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="relative flex h-12 w-12 items-center justify-center">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/75 opacity-75" />
-                <span className="relative inline-flex rounded-full h-7 w-7 bg-primary" />
-              </div>
+          {loadingCampaigns ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/20 p-5 flex flex-col gap-4 h-[220px]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 animate-pulse" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 animate-pulse" />
+                      <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/3 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-3/4 animate-pulse" />
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full animate-pulse" />
+                  </div>
+                  <div className="mt-auto flex gap-2">
+                    <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl flex-1 animate-pulse" />
+                    <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl flex-1 animate-pulse" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-20 bg-white/60 dark:bg-slate-900/30 border border-dashed border-slate-300 dark:border-slate-700 rounded-3xl">
@@ -451,7 +368,7 @@ export default function InfluencerMarketplacePage() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {recommended.slice(0, 3).map((c) => (
-                      <CampaignCard key={c.id} campaign={c} onApply={() => setSelectedCampaign(c)} onToggleSave={handleToggleSave} onView={() => setSelectedCampaign(c)} />
+                      <CampaignCard key={c.id} campaign={c} onApply={() => navToDetail(c)} onToggleSave={handleToggleSave} onView={() => navToDetail(c)} />
                     ))}
                   </div>
                 </div>
@@ -465,7 +382,7 @@ export default function InfluencerMarketplacePage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filtered.map((c) => (
-                    <CampaignCard key={c.id} campaign={c} onApply={() => setSelectedCampaign(c)} onToggleSave={handleToggleSave} onView={() => setSelectedCampaign(c)} />
+                    <CampaignCard key={c.id} campaign={c} onApply={() => navToDetail(c)} onToggleSave={handleToggleSave} onView={() => navToDetail(c)} />
                   ))}
                 </div>
               </div>
@@ -480,7 +397,20 @@ export default function InfluencerMarketplacePage() {
           {/* Applications */}
           <div>
             <h2 className="text-base font-extrabold text-slate-900 dark:text-white mb-4">My Applications ({applications.applications.length})</h2>
-            {applications.applications.length === 0 ? (
+            {loadingApplications ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-white/50 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-4 h-[74px]">
+                    <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 animate-pulse shrink-0" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/3 animate-pulse" />
+                      <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/4 animate-pulse" />
+                    </div>
+                    <div className="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse shrink-0" />
+                  </div>
+                ))}
+              </div>
+            ) : applications.applications.length === 0 ? (
               <div className="text-center py-10 bg-white/60 dark:bg-slate-900/30 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl">
                 <p className="text-slate-400 text-sm">No applications yet. Browse campaigns and apply!</p>
               </div>
@@ -518,7 +448,7 @@ export default function InfluencerMarketplacePage() {
                     <button
                       onClick={() => {
                         const camp = campaigns.find((c) => c.id === inv.campaignId);
-                        if (camp) setSelectedCampaign(camp);
+                        if (camp) navToDetail(camp);
                       }}
                       className="text-xs font-bold text-primary hover:text-primary/80 transition-colors shrink-0"
                     >

@@ -386,7 +386,10 @@ export class InfluencerService {
       .offset(offset);
 
     const applications = await db
-      .select({ campaignId: schema.campaignApplications.campaignId })
+      .select({ 
+        campaignId: schema.campaignApplications.campaignId,
+        status: schema.campaignApplications.status
+      })
       .from(schema.campaignApplications)
       .where(eq(schema.campaignApplications.influencerId, influencerId));
 
@@ -400,7 +403,7 @@ export class InfluencerService {
       .from(schema.campaignInvites)
       .where(eq(schema.campaignInvites.influencerId, influencerId));
 
-    const appliedIds = new Set(applications.map((a) => a.campaignId));
+    const applicationMap = new Map(applications.map((a) => [a.campaignId, a.status]));
     const savedIds = new Set(saved.map((s) => s.campaignId));
     const invitedIds = new Set(invites.map((i) => i.campaignId));
 
@@ -412,7 +415,8 @@ export class InfluencerService {
 
     return campaigns.map((c) => ({
       ...c,
-      isApplied: appliedIds.has(c.id),
+      isApplied: applicationMap.has(c.id),
+      applicationStatus: applicationMap.get(c.id),
       isSaved: savedIds.has(c.id),
       isInvited: invitedIds.has(c.id),
       isRecommended: influencerProfile
@@ -467,7 +471,8 @@ export class InfluencerService {
     env: Record<string, any>,
     influencerId: string,
     campaignId: string,
-    proposal: string
+    proposal: string,
+    influencerAccountId?: string
   ) {
     const db = getDb(env);
 
@@ -484,6 +489,7 @@ export class InfluencerService {
       id,
       influencerId,
       campaignId,
+      influencerAccountId: influencerAccountId || null,
       proposal,
       status: "pending" as const,
       createdAt: new Date(),

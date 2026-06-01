@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 export default function CreateCampaignPage() {
   const { user } = useAuth();
   const router = useRouter();
-  
+
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -24,13 +24,13 @@ export default function CreateCampaignPage() {
 
   // Raw user inputs
   const [title, setTitle] = useState("");
-  const [budgetUsd, setBudgetUsd] = useState("1000");
+  const [budgetInr, setBudgetInr] = useState("1000");
   const [campaignType, setCampaignType] = useState("reel");
   const [influencerTier, setInfluencerTier] = useState<string>("mid");
   const [targetAudience, setTargetAudience] = useState("");
   const [requirements, setRequirements] = useState("");
   const [allowFraction, setAllowFraction] = useState(false);
-  
+
   // AI generated and editable fields
   const [aiTitle, setAiTitle] = useState("");
   const [aiDescription, setAiDescription] = useState("");
@@ -51,8 +51,8 @@ export default function CreateCampaignPage() {
             setStep(2);
           }
         }
-      } catch (err) { 
-        console.error(err); 
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoadingAccounts(false);
       }
@@ -62,20 +62,20 @@ export default function CreateCampaignPage() {
 
   const handleGenerateBrief = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !budgetUsd || !selectedBrandAccountId) return;
-    
+    if (!title || !budgetInr || !selectedBrandAccountId) return;
+
     setGeneratingBrief(true);
-    
+
     try {
       const selectedBrand = brandAccounts.find(a => a.id === selectedBrandAccountId);
-      
+
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           data: {
             title,
-            budget: budgetUsd,
+            budget: budgetInr,
             format: campaignType,
             tier: influencerTier,
             targetAudience,
@@ -85,9 +85,9 @@ export default function CreateCampaignPage() {
           }
         })
       });
-      
+
       const result = (await res.json()) as any;
-      
+
       if (res.ok && result.brief) {
         setAiTitle(result.brief.refinedTitle || title);
         setAiDescription(result.brief.description || "");
@@ -106,24 +106,24 @@ export default function CreateCampaignPage() {
   };
 
   const handlePublish = async () => {
-    if (!aiTitle || !aiDescription || !budgetUsd || !selectedBrandAccountId) {
+    if (!aiTitle || !aiDescription || !budgetInr || !selectedBrandAccountId) {
       alert("Please ensure the title and description are not empty.");
       return;
     }
     try {
       setSaving(true);
-      const budgetCents = Math.round(parseFloat(budgetUsd) * 100) || 0;
-      
+      const budgetCents = Math.round(parseFloat(budgetInr) * 100) || 0;
+
       const res = await api.api.campaigns.create.$post({
         json: {
-          title: aiTitle, 
-          description: aiDescription, 
-          targetAudience: aiTargetAudience || null, 
+          title: aiTitle,
+          description: aiDescription,
+          targetAudience: aiTargetAudience || null,
           requirements: aiRequirements || null,
-          budget: budgetCents, 
+          budget: budgetCents,
           campaignType,
-          expectedReach: 150000, 
-          brandAccountId: selectedBrandAccountId, 
+          expectedReach: 150000,
+          brandAccountId: selectedBrandAccountId,
           allowFraction,
         },
       });
@@ -167,10 +167,10 @@ export default function CreateCampaignPage() {
           Back to Workspace
         </Link>
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mt-4 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60 dark:from-primary dark:to-primary/50">
-          AI Campaign Builder
+          Campaign Builder
         </h1>
         <p className="text-primary/80 dark:text-primary/60 text-sm mt-1">
-          Generate a viral campaign brief in seconds with AI, then tweak to perfection.
+          Generate a campaign brief in seconds, then tweak to perfection.
         </p>
       </div>
 
@@ -202,11 +202,11 @@ export default function CreateCampaignPage() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 dark:bg-primary/10 rounded-full blur-[80px] pointer-events-none" />
           <CardHeader>
             <CardTitle className="text-xl text-slate-900 dark:text-white">Campaign Foundation</CardTitle>
-            <CardDescription className="text-primary/70 dark:text-primary/50">Draft the basics, our AI will instantly format the perfect brief.</CardDescription>
+            <CardDescription className="text-primary/70 dark:text-primary/50">Draft the basics, and format the perfect brief.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleGenerateBrief} className="space-y-6 relative z-10">
-              
+
               <div className="space-y-2">
                 <Label className="text-primary/80 dark:text-primary/80 text-xs font-bold uppercase tracking-wider">Posting As</Label>
                 <Select value={selectedBrandAccountId} onValueChange={(val) => val && setSelectedBrandAccountId(val as string)} required>
@@ -214,7 +214,7 @@ export default function CreateCampaignPage() {
                     <SelectValue placeholder="Select Brand Profile">
                       {brandAccounts.find((a: any) => a.id === selectedBrandAccountId) ? (
                         <span className="flex items-center gap-2 font-medium">
-                          🏢 {brandAccounts.find((a: any) => a.id === selectedBrandAccountId).companyName}
+                          {brandAccounts.find((a: any) => a.id === selectedBrandAccountId).companyName}
                         </span>
                       ) : "Select Brand Profile"}
                     </SelectValue>
@@ -222,8 +222,8 @@ export default function CreateCampaignPage() {
                   <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-300">
                     {brandAccounts.map((acc: any) => (
                       <SelectItem key={acc.id} value={acc.id}>
-                        <span className="flex items-center gap-2 font-medium">
-                          🏢 {acc.companyName} <span className="text-[10px] text-primary ml-1 border border-primary/20 bg-primary/10 px-1.5 py-0.5 rounded-md">Verified</span>
+                        <span className="flex items-center gap-2 font-medium pr-6">
+                          {acc.companyName}
                         </span>
                       </SelectItem>
                     ))}
@@ -238,10 +238,10 @@ export default function CreateCampaignPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-primary/80 dark:text-primary/80 text-xs font-bold uppercase tracking-wider">Total Budget (USD)</Label>
+                  <Label className="text-primary/80 dark:text-primary/80 text-xs font-bold uppercase tracking-wider">Total Budget (INR)</Label>
                   <div className="relative flex items-center">
-                    <span className="absolute left-4 text-slate-500 dark:text-slate-400 font-bold">$</span>
-                    <Input type="number" min="100" value={budgetUsd} onChange={(e) => setBudgetUsd(e.target.value)} className="pl-8 bg-white dark:bg-slate-950/50 border-slate-200 dark:border-slate-700/50 text-slate-900 dark:text-white rounded-xl h-12 focus:border-primary" required />
+                    <span className="absolute left-4 text-slate-500 dark:text-slate-400 font-bold">₹</span>
+                    <Input type="number" min="100" value={budgetInr} onChange={(e) => setBudgetInr(e.target.value)} className="pl-8 bg-white dark:bg-slate-950/50 border-slate-200 dark:border-slate-700/50 text-slate-900 dark:text-white rounded-xl h-12 focus:border-primary" required />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -277,7 +277,7 @@ export default function CreateCampaignPage() {
 
               <div className="space-y-2">
                 <Label className="text-primary/80 dark:text-primary/80 text-xs font-bold uppercase tracking-wider">Raw Requirements / Brain dump</Label>
-                <textarea rows={3} value={requirements} onChange={(e) => setRequirements(e.target.value)} placeholder="Just braindump what you need. Our AI will format it into a professional brief..." className="w-full p-4 text-sm bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-slate-700/50 text-slate-900 dark:text-white rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none placeholder-slate-400 dark:placeholder-slate-500 resize-none" />
+                <textarea rows={3} value={requirements} onChange={(e) => setRequirements(e.target.value)} placeholder="Just braindump what you need. It will be formatted into a professional brief..." className="w-full p-4 text-sm bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-slate-700/50 text-slate-900 dark:text-white rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none placeholder-slate-400 dark:placeholder-slate-500 resize-none" />
               </div>
 
               <button type="submit" disabled={generatingBrief} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-4 rounded-xl shadow-sm shadow-primary/20 dark:shadow-primary/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
@@ -287,7 +287,7 @@ export default function CreateCampaignPage() {
                     Polishing Brief...
                   </>
                 ) : (
-                  "Generate Brief with AI ✨"
+                  "Generate Brief ✨"
                 )}
               </button>
             </form>
@@ -306,16 +306,16 @@ export default function CreateCampaignPage() {
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                     Review & Tweak
                   </div>
-                  <CardTitle className="text-2xl text-slate-900 dark:text-white font-black">Review AI Brief</CardTitle>
+                  <CardTitle className="text-2xl text-slate-900 dark:text-white font-black">Review Brief</CardTitle>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Total Budget</p>
-                  <p className="text-2xl font-black text-primary">${budgetUsd}</p>
+                  <p className="text-2xl font-black text-primary">₹{budgetInr}</p>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="pt-6 space-y-6 relative z-10">
-              
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800/80 rounded-xl p-3">
                   <p className="text-[10px] font-bold text-slate-500 uppercase">Format</p>
@@ -336,22 +336,22 @@ export default function CreateCampaignPage() {
               </div>
 
               <div className="bg-slate-100 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 space-y-6">
-                
+
                 <div className="space-y-2">
                   <Label className="text-primary/80 dark:text-primary/70 text-xs font-bold uppercase tracking-wider">Campaign Title</Label>
                   <Input value={aiTitle} onChange={(e) => setAiTitle(e.target.value)} className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/50 focus:border-primary h-12 rounded-xl text-slate-900 dark:text-white font-bold" />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label className="text-primary/80 dark:text-primary/70 text-xs font-bold uppercase tracking-wider">Campaign Overview / Hook</Label>
                   <textarea rows={3} value={aiDescription} onChange={(e) => setAiDescription(e.target.value)} className="w-full p-4 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none text-slate-900 dark:text-slate-200 leading-relaxed resize-none" />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label className="text-primary/80 dark:text-primary/70 text-xs font-bold uppercase tracking-wider">Target Audience Details</Label>
                   <textarea rows={2} value={aiTargetAudience} onChange={(e) => setAiTargetAudience(e.target.value)} className="w-full p-4 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none text-slate-900 dark:text-slate-200 leading-relaxed resize-none" />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label className="text-primary/80 dark:text-primary/70 text-xs font-bold uppercase tracking-wider">Deliverables, Dos & Don'ts</Label>
                   <textarea rows={6} value={aiRequirements} onChange={(e) => setAiRequirements(e.target.value)} className="w-full p-4 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none text-slate-900 dark:text-slate-200 leading-relaxed resize-y" />

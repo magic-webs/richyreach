@@ -23,4 +23,5 @@ export const influencerProfileSchema = z.object({
 
 export const applyCampaignSchema = z.object({
   proposal: z.string().min(10, "Proposal must be at least 10 characters"),
+  influencerAccountId: z.string().optional(),
 });

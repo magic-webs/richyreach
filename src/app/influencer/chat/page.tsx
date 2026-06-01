@@ -18,6 +18,7 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   // Auto scroll to bottom of chat
   const scrollToBottom = () => {
@@ -73,52 +74,89 @@ export default function ChatPage() {
     fetchMessages(room.roomId);
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedRoom) return;
-
-    try {
-      setSending(true);
-      const res = await (api.api.chat.message[":roomId"].$post as any)({
-        param: { roomId: selectedRoom.roomId },
-        json: { content: newMessage.trim() },
-      });
-
-      if (res.ok) {
-        const result = await res.json();
-        if (result.success) {
-          setNewMessage("");
-          // Instantly refresh messages
-          await fetchMessages(selectedRoom.roomId, true);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to send message", error);
-    } finally {
-      setSending(false);
-    }
-  };
-
   // Initial load
   useEffect(() => {
     fetchRooms(true);
   }, [user.role, user.id]);
 
-  // Polling for new messages in selected room (every 4 seconds)
+  // WebSocket connection for real-time messaging
   useEffect(() => {
     if (!selectedRoom) return;
 
-    const interval = setInterval(() => {
-      fetchMessages(selectedRoom.roomId, true);
-    }, 4000);
+    const wsUrl = `ws://localhost:4000/chat?roomId=${selectedRoom.roomId}`;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
 
-    return () => clearInterval(interval);
+    ws.onopen = () => {
+      console.log("Connected to WS room", selectedRoom.roomId);
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "pong") return;
+        if (data.error) {
+          console.error("WS Error:", data.error);
+          return;
+        }
+        
+        // Append new message to state
+        setMessages((prev) => {
+          // Prevent duplicates
+          if (prev.some((m) => m.id === data.id)) return prev;
+          return [...prev, data];
+        });
+      } catch (err) {
+        console.error("Failed to parse WS message", err);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log("WS connection closed");
+    };
+
+    return () => {
+      ws.close();
+      wsRef.current = null;
+    };
   }, [selectedRoom?.roomId]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !selectedRoom) return;
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      // Send via true WebSocket
+      wsRef.current.send(JSON.stringify({ content: newMessage.trim() }));
+      setNewMessage("");
+    } else {
+      // Fallback to REST API if WS fails
+      try {
+        setSending(true);
+        const res = await (api.api.chat.message[":roomId"].$post as any)({
+          param: { roomId: selectedRoom.roomId },
+          json: { content: newMessage.trim() },
+        });
+
+        if (res.ok) {
+          const result = await res.json();
+          if (result.success) {
+            setNewMessage("");
+            await fetchMessages(selectedRoom.roomId, true);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to send message", error);
+      } finally {
+        setSending(false);
+      }
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto h-[calc(100vh-12rem)] flex gap-6 animate-fade-in relative">
       {/* Channels Sidebar List (Left pane) */}
-      <div className="w-80 bg-white/80 dark:bg-slate-900/35 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-xl shadow-slate-100/40 dark:shadow-none backdrop-blur-md flex flex-col overflow-hidden">
+      <div className={`w-full md:w-80 ${selectedRoom ? "hidden md:flex" : "flex"} bg-white/80 dark:bg-slate-900/35 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-xl shadow-slate-100/40 dark:shadow-none backdrop-blur-md flex-col overflow-hidden shrink-0`}>
         <div className="p-5 border-b border-slate-150 dark:border-slate-800/60">
           <h2 className="text-base font-bold text-slate-900 dark:text-white">Inbox Channels</h2>
           <p className="text-[10px] text-slate-500 font-semibold uppercase mt-1">Direct Brand-Creator Deals</p>
@@ -172,7 +210,7 @@ export default function ChatPage() {
       </div>
 
       {/* Main chat window pane (Right pane) */}
-      <div className="flex-1 bg-white/80 dark:bg-slate-900/35 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-xl shadow-slate-100/40 dark:shadow-none backdrop-blur-md flex flex-col overflow-hidden relative">
+      <div className={`flex-1 ${!selectedRoom ? "hidden md:flex" : "flex"} bg-white/80 dark:bg-slate-900/35 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-xl shadow-slate-100/40 dark:shadow-none backdrop-blur-md flex-col overflow-hidden relative`}>
         <div className="absolute inset-0 bg-primary/5 rounded-full blur-[120px] pointer-events-none -mr-40 -mt-40 z-0"></div>
 
         {!selectedRoom ? (
@@ -191,6 +229,14 @@ export default function ChatPage() {
           <>
             {/* Thread Header */}
             <div className="p-4 border-b border-slate-150 dark:border-slate-800/60 flex items-center gap-3.5 z-10 bg-slate-50/80 dark:bg-slate-900/55 backdrop-blur-md">
+              <button 
+                onClick={() => setSelectedRoom(null)}
+                className="md:hidden p-2 -ml-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
               <img
                 src={
                   user.role === "influencer"

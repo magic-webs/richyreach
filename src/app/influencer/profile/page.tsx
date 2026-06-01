@@ -338,84 +338,31 @@ export default function InfluencerProfilePage() {
     { id: "analytics", label: "Analytics" },
     { id: "audience", label: "Audience" },
     { id: "portfolio", label: "Portfolio" },
-    { id: "accounts", label: `My Accounts (${accounts.length})` },
     { id: "settings", label: "Settings" },
   ] as const;
+
+  const allAccounts = accounts.map(a => ({ ...a, isPrimary: false }));
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
 
       {/* ── Hero Header ── */}
       <div className="relative overflow-hidden rounded-3xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-xl bg-gradient-to-br from-slate-50/90 via-white/80 to-slate-100/60 dark:from-slate-900/80 dark:via-slate-900/60 dark:to-[#3F030B]/15 shadow-xl shadow-slate-200/50 dark:shadow-none p-6 md:p-8">
-        {/* Ambient blobs */}
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none" />
         <div className="absolute -bottom-10 left-10 w-48 h-48 bg-violet-500/5 rounded-full blur-[60px] pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
-          {/* Avatar + identity */}
           <div className="flex items-center gap-5">
-            <div className="relative">
-              <img
-                src={profile?.avatar || user.avatar}
-                alt={profile?.name || user.name}
-                className="w-20 h-20 rounded-2xl border-2 border-primary/30 dark:border-primary/50 bg-slate-100 dark:bg-slate-800 object-cover shadow-lg"
-              />
-              {profile?.verified && (
-                <span className="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow">
-                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                </span>
-              )}
-            </div>
+            <img src={user.avatar} alt={user.name} className="w-16 h-16 rounded-2xl border-2 border-primary/30 bg-slate-100 dark:bg-slate-800 object-cover shadow-lg" />
             <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                  {profile ? `@${profile.instagramHandle}` : "Setup your Profile"}
-                </h1>
-                {profile?.level && (
-                  <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${LEVEL_COLORS[profile.level] || LEVEL_COLORS.nano}`}>
-                    {profile.level}
-                  </span>
-                )}
-              </div>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{user.name} · Creator Account</p>
-              {profile?.niche && (
-                <span className="inline-block mt-2 text-xs font-semibold text-primary dark:text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
-                  {profile.niche}
-                </span>
-              )}
+              <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Welcome, {user.name}</h1>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">Creator Dashboard</p>
             </div>
           </div>
-
-          {/* Reach Score + quick stats */}
-          <div className="flex items-center gap-6 flex-wrap">
-            {profile && (
-              <>
-                <ReachScoreRing score={profile.reachScore || 0} size={88} />
-                <div className="grid grid-cols-2 gap-3 text-center">
-                  <div className="px-4 py-2.5 rounded-2xl bg-white/60 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/50 backdrop-blur-sm">
-                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Followers</p>
-                    <p className="text-base font-black text-slate-900 dark:text-white mt-0.5">{fmt(profile.followers)}</p>
-                  </div>
-                  <div className="px-4 py-2.5 rounded-2xl bg-white/60 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/50 backdrop-blur-sm">
-                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Engagement</p>
-                    <p className="text-base font-black text-emerald-500 dark:text-emerald-400 mt-0.5">{fmtPct(profile.engagementRate)}</p>
-                  </div>
-                  <div className="px-4 py-2.5 rounded-2xl bg-white/60 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/50 backdrop-blur-sm">
-                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Avg Views</p>
-                    <p className="text-base font-black text-primary mt-0.5">{fmt(profile.avgViews)}</p>
-                  </div>
-                  <div className="px-4 py-2.5 rounded-2xl bg-white/60 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/50 backdrop-blur-sm">
-                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Avg Likes</p>
-                    <p className="text-base font-black text-violet-500 dark:text-violet-400 mt-0.5">{fmt(profile.avgLikes || 0)}</p>
-                  </div>
-                </div>
-              </>
-            )}
-            <GlassButton type="button" variant="outline" size="sm" onClick={handleLogout} className="text-rose-500 border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 self-start">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-              Sign Out
-            </GlassButton>
-          </div>
+          <GlassButton type="button" variant="outline" size="sm" onClick={handleLogout} className="text-rose-500 border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/10 self-start md:self-auto">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            Sign Out
+          </GlassButton>
         </div>
       </div>
 
@@ -441,73 +388,133 @@ export default function InfluencerProfilePage() {
       ══════════════════════════════════════════ */}
       {activeTab === "overview" && (
         <div className="space-y-6">
-          {!profile ? (
-            <div className="text-center py-16 bg-white/60 dark:bg-slate-900/30 border border-dashed border-slate-300 dark:border-slate-700 rounded-3xl">
-              <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <svg className="w-7 h-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+          <div className="bg-white/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-lg shadow-slate-100/40 dark:shadow-none">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">All Profiles</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage your connected Instagram profiles and niches.</p>
               </div>
-              <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-1">No profile yet</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">Head to Settings to connect your Instagram account</p>
-              <button onClick={() => setActiveTab("settings")} className="btn-glass-purple px-5 py-2.5 rounded-xl text-sm font-bold text-white">Go to Settings →</button>
+              <button
+                onClick={() => { setShowAddForm(!showAddForm); setAccountsError(null); }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-90 transition-opacity shadow cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                Add Account
+              </button>
             </div>
-          ) : (
-            <>
-              {/* Stat cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard label="Followers" value={fmt(profile.followers)} sub={`${profile.level?.toUpperCase()} tier`} icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>} />
-                <StatCard label="Engagement Rate" value={fmtPct(profile.engagementRate)} color="text-emerald-600 dark:text-emerald-400" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>} />
-                <StatCard label="Avg Reel Views" value={fmt(profile.avgViews)} color="text-primary" icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} />
-                <StatCard label="Reach Score" value={`${Math.round(profile.reachScore || 0)}/100`} color={profile.reachScore >= 71 ? "text-emerald-600 dark:text-emerald-400" : profile.reachScore >= 41 ? "text-amber-500" : "text-rose-500"} icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>} />
-              </div>
 
-              {/* Bio & score breakdown */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Bio */}
-                <div className="bg-white/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 rounded-3xl p-6 backdrop-blur-md shadow-lg shadow-slate-100/40 dark:shadow-none space-y-4">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">About</h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic">
-                    "{profile.bio || "No bio synced yet."}"
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    <span>{profile.country || "Not specified"}</span>
-                  </div>
-                  {/* Social links */}
-                  {(profile.socialLinks?.twitter || profile.socialLinks?.tiktok || profile.socialLinks?.youtube) && (
-                    <div className="flex gap-2 flex-wrap pt-1">
-                      {profile.socialLinks?.twitter && <a href={`https://twitter.com/${profile.socialLinks.twitter}`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-sky-500 bg-sky-500/10 px-2.5 py-1 rounded-lg border border-sky-500/20 hover:bg-sky-500/20 transition-colors">𝕏 @{profile.socialLinks.twitter}</a>}
-                      {profile.socialLinks?.tiktok && <a href={`https://tiktok.com/@${profile.socialLinks.tiktok}`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-pink-500 bg-pink-500/10 px-2.5 py-1 rounded-lg border border-pink-500/20 hover:bg-pink-500/20 transition-colors">TikTok @{profile.socialLinks.tiktok}</a>}
-                      {profile.socialLinks?.youtube && <a href={`https://youtube.com/@${profile.socialLinks.youtube}`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-rose-500 bg-rose-500/10 px-2.5 py-1 rounded-lg border border-rose-500/20 hover:bg-rose-500/20 transition-colors">YT @{profile.socialLinks.youtube}</a>}
+            {/* Add Form */}
+            {showAddForm && (
+              <div className="mb-6 p-5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Add New Instagram Account</h3>
+                {accountsError && (
+                  <p className="text-xs text-rose-500 bg-rose-500/10 border border-rose-500/20 px-3 py-2 rounded-xl">{accountsError}</p>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Instagram Handle *</label>
+                    <div className="relative flex items-center"><span className="absolute left-3 text-slate-400 font-bold">@</span>
+                      <input placeholder="username" value={newAccHandle} onChange={e => setNewAccHandle(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
                     </div>
-                  )}
-                  {/* Skills */}
-                  {profile.skills?.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {(profile.skills as string[]).map((s) => (
-                        <span key={s} className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-slate-600 dark:text-slate-300">{s}</span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Reach Score breakdown */}
-                <div className="bg-white/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 rounded-3xl p-6 backdrop-blur-md shadow-lg shadow-slate-100/40 dark:shadow-none space-y-5">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Reach Score Breakdown</h3>
-                    <ReachScoreRing score={profile.reachScore || 0} size={52} strokeWidth={5} />
                   </div>
-                  <div className="space-y-3">
-                    <ScoreBar label="Followers" value={breakdown.followers || 0} color="bg-blue-500" />
-                    <ScoreBar label="Engagement Rate" value={breakdown.engagement || 0} color="bg-emerald-500" />
-                    <ScoreBar label="Consistency" value={breakdown.consistency || 0} color="bg-violet-500" />
-                    <ScoreBar label="Audience Quality" value={breakdown.audienceQuality || 0} color="bg-amber-500" />
-                    <ScoreBar label="Growth Rate" value={breakdown.growth || 0} color="bg-sky-500" />
-                    <ScoreBar label="Recent Performance" value={breakdown.recentPerformance || 0} color="bg-rose-500" />
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Niche</label>
+                    <Select value={newAccNiche} onValueChange={setNewAccNiche}>
+                      <SelectTrigger className="w-full h-10 px-3 text-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white">
+                        <SelectValue placeholder="Select Niche" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {NICHES.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Followers</label>
+                    <input type="number" placeholder="e.g. 50000" value={newAccFollowers} onChange={e => setNewAccFollowers(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Engagement Rate (%)</label>
+                    <input type="number" step="0.1" placeholder="e.g. 3.5" value={newAccEngagement} onChange={e => setNewAccEngagement(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Avg Views / Reel</label>
+                    <input type="number" placeholder="e.g. 25000" value={newAccAvgViews} onChange={e => setNewAccAvgViews(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Country</label>
+                    <input placeholder="e.g. India" value={newAccCountry} onChange={e => setNewAccCountry(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase text-slate-500">Short Bio (optional)</label>
+                    <input placeholder="Tell brands about this account" value={newAccBio} onChange={e => setNewAccBio(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
                   </div>
                 </div>
+                <div className="flex gap-3 pt-1">
+                  <button onClick={handleAddAccount} disabled={addingAccount} className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer shadow">
+                    {addingAccount ? "Submitting..." : "Submit for Verification"}
+                  </button>
+                  <button onClick={() => { setShowAddForm(false); setAccountsError(null); }} className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                    Cancel
+                  </button>
+                </div>
               </div>
-            </>
-          )}
+            )}
+
+            {/* Accounts List */}
+            {accountsLoading ? (
+              <div className="py-12 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+              </div>
+            ) : allAccounts.length === 0 ? (
+              <div className="text-center py-14 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl">
+                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-7 h-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">No profiles found.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {allAccounts.map((acc: any) => (
+                  <div key={acc.id} className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-yellow-400 via-rose-500 to-purple-600 flex items-center justify-center text-white text-sm font-black shadow-md shrink-0">
+                      IG
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-slate-900 dark:text-white text-sm">@{acc.instagramHandle}</p>
+                        {acc.isPrimary && (
+                          <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border bg-primary/10 text-primary border-primary/20">Primary Profile</span>
+                        )}
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                          acc.status === "verified" || acc.verified ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" :
+                          acc.status === "rejected" ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30" :
+                          "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                        }`}>{acc.status || (acc.verified ? "verified" : "unverified")}</span>
+                      </div>
+                      <div className="flex gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
+                        <span>{(acc.followers || 0) >= 1000 ? `${((acc.followers || 0) / 1000).toFixed(1)}K` : acc.followers || 0} followers</span>
+                        <span>{(acc.engagementRate || 0).toFixed(1)}% eng.</span>
+                        <span className="capitalize">{acc.niche}</span>
+                      </div>
+                    </div>
+                    {!acc.isPrimary && (
+                      <button
+                        onClick={() => handleDeleteAccount(acc.id)}
+                        className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              <span className="font-bold text-slate-700 dark:text-slate-300">ℹ️ How it works: </span>
+              After submitting, an admin will review your account details. Once approved, you can select this account when applying to campaigns.
+            </div>
+          </div>
         </div>
       )}
 
@@ -544,7 +551,6 @@ export default function InfluencerProfilePage() {
                   { label: "Posts/Week", val: (profile.postingFrequency || 0).toFixed(1) },
                   { label: "Monthly Growth", val: `+${(profile.growthRate || 0).toFixed(1)}%` },
                   { label: "Avg Likes", val: fmt(profile.avgLikes || 0) },
-                  { label: "Base Price", val: `$${(profile.pricing / 100).toFixed(0)}` },
                 ].map((m) => (
                   <div key={m.label} className="bg-white/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-4 backdrop-blur-md shadow-md shadow-slate-100/40 dark:shadow-none text-center">
                     <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{m.label}</p>
@@ -658,37 +664,12 @@ export default function InfluencerProfilePage() {
         <div className="bg-white/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-lg shadow-slate-100/40 dark:shadow-none">
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-6">Edit Creator Profile</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Instagram Link & Sync */}
-            <div className="space-y-4">
+            {/* Removed Instagram Link & Sync */}
+            <div className="hidden">
               <Label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Instagram Account</Label>
-              
-              {/* OAuth Sync */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-tr from-yellow-400 via-rose-500 to-purple-600 flex items-center justify-center text-white shadow-md">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900 dark:text-white">
-                      {instagramHandle ? `@${instagramHandle}` : "Not Connected"}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {instagramHandle ? "Connected securely via API" : "Link your account to sync followers & reach"}
-                    </p>
-                  </div>
-                </div>
-                <GlassButton type="button" size="sm" onClick={handleInstagramConnect} disabled={saving} className="whitespace-nowrap font-bold text-primary dark:text-primary">
-                  {saving ? "Redirecting..." : instagramHandle ? "Re-sync via OAuth" : "Connect Account"}
-                </GlassButton>
-              </div>
-
-              {/* Manual Fallback */}
-              <div className="relative flex flex-col gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-                <Label htmlFor="handle" className="text-[10px] uppercase text-slate-400">Or manually update handle (Fallback)</Label>
-                <div className="relative flex items-center">
-                  <span className="absolute left-4 text-slate-400 font-bold select-none">@</span>
-                  <Input id="handle" placeholder="username" value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} className="pl-9 bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/20" required />
-                </div>
+              <div className="relative flex items-center">
+                <span className="absolute left-4 text-slate-400 font-bold select-none">@</span>
+                <Input id="handle" placeholder="username" value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} className="pl-9 bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary/20" />
               </div>
             </div>
 
@@ -713,14 +694,6 @@ export default function InfluencerProfilePage() {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Pricing */}
-              <div className="space-y-2">
-                <Label htmlFor="pricing" className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300">Base Price (USD / post)</Label>
-                <div className="relative flex items-center">
-                  <span className="absolute left-4 text-slate-400 font-bold select-none">$</span>
-                  <Input id="pricing" type="number" placeholder="150" value={pricingUsd} onChange={(e) => setPricingUsd(e.target.value)} className="pl-8 bg-white dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 rounded-xl focus:border-primary" />
-                </div>
-              </div>
             </div>
 
             {/* Skills */}
@@ -741,9 +714,9 @@ export default function InfluencerProfilePage() {
 
             <GlassPurpleButton type="submit" disabled={saving} className="w-full">
               {saving ? (
-                <><svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>Syncing & Saving...</>
+                <><svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>Saving...</>
               ) : (
-                <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89H17.75" /></svg>Sync Instagram & Save</>
+                <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89H17.75" /></svg>Save Profile</>
               )}
             </GlassPurpleButton>
 
@@ -757,140 +730,7 @@ export default function InfluencerProfilePage() {
 
         </div>
       )}
-      {/* ══════════════════════════════════════════
-          TAB: MY ACCOUNTS
-      ══════════════════════════════════════════ */}
-      {activeTab === "accounts" && (
-        <div className="space-y-6">
-          <div className="bg-white/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 rounded-3xl p-6 md:p-8 backdrop-blur-md shadow-lg shadow-slate-100/40 dark:shadow-none">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">My Instagram Accounts</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Add multiple accounts for different niches. Each must be approved by an admin before use.</p>
-              </div>
-              <button
-                onClick={() => { setShowAddForm(!showAddForm); setAccountsError(null); }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-90 transition-opacity shadow cursor-pointer"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-                Add Account
-              </button>
-            </div>
 
-            {/* Add Form */}
-            {showAddForm && (
-              <div className="mb-6 p-5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
-                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Add New Instagram Account</h3>
-                {accountsError && (
-                  <p className="text-xs text-rose-500 bg-rose-500/10 border border-rose-500/20 px-3 py-2 rounded-xl">{accountsError}</p>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-500">Instagram Handle *</label>
-                    <div className="relative flex items-center"><span className="absolute left-3 text-slate-400 font-bold">@</span>
-                      <input placeholder="username" value={newAccHandle} onChange={e => setNewAccHandle(e.target.value)} className="w-full pl-8 pr-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-500">Niche</label>
-                    <select value={newAccNiche} onChange={e => setNewAccNiche(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary">
-                      {NICHES.map(n => <option key={n} value={n}>{n}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-500">Followers</label>
-                    <input type="number" placeholder="e.g. 50000" value={newAccFollowers} onChange={e => setNewAccFollowers(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-500">Engagement Rate (%)</label>
-                    <input type="number" step="0.1" placeholder="e.g. 3.5" value={newAccEngagement} onChange={e => setNewAccEngagement(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-500">Avg Views / Reel</label>
-                    <input type="number" placeholder="e.g. 25000" value={newAccAvgViews} onChange={e => setNewAccAvgViews(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-500">Base Price (USD / post)</label>
-                    <div className="relative flex items-center"><span className="absolute left-3 text-slate-400 font-bold">$</span>
-                      <input type="number" placeholder="150" value={newAccPricing} onChange={e => setNewAccPricing(e.target.value)} className="w-full pl-7 pr-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-500">Country</label>
-                    <input placeholder="e.g. India" value={newAccCountry} onChange={e => setNewAccCountry(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-500">Short Bio (optional)</label>
-                    <input placeholder="Tell brands about this account" value={newAccBio} onChange={e => setNewAccBio(e.target.value)} className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white outline-none focus:border-primary" />
-                  </div>
-                </div>
-                <div className="flex gap-3 pt-1">
-                  <button onClick={handleAddAccount} disabled={addingAccount} className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer shadow">
-                    {addingAccount ? "Submitting..." : "Submit for Verification"}
-                  </button>
-                  <button onClick={() => { setShowAddForm(false); setAccountsError(null); }} className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Accounts List */}
-            {accountsLoading ? (
-              <div className="py-12 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-              </div>
-            ) : accounts.length === 0 ? (
-              <div className="text-center py-14 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl">
-                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-7 h-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                </div>
-                <p className="text-slate-500 dark:text-slate-400 text-sm">No accounts added yet. Click <strong>Add Account</strong> to get started.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {accounts.map((acc: any) => (
-                  <div key={acc.id} className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-yellow-400 via-rose-500 to-purple-600 flex items-center justify-center text-white text-sm font-black shadow-md shrink-0">
-                      IG
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-bold text-slate-900 dark:text-white text-sm">@{acc.instagramHandle}</p>
-                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
-                          acc.status === "verified" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" :
-                          acc.status === "rejected" ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30" :
-                          "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
-                        }`}>{acc.status}</span>
-                      </div>
-                      <div className="flex gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
-                        <span>{(acc.followers || 0) >= 1000 ? `${((acc.followers || 0) / 1000).toFixed(1)}K` : acc.followers || 0} followers</span>
-                        <span>{(acc.engagementRate || 0).toFixed(1)}% eng.</span>
-                        <span className="capitalize">{acc.niche}</span>
-                        <span>${((acc.pricing || 0) / 100).toFixed(0)}/post</span>
-                      </div>
-                      {acc.verificationNote && (
-                        <p className="text-[10px] text-rose-500 mt-1">Admin note: {acc.verificationNote}</p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => handleDeleteAccount(acc.id)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              <span className="font-bold text-slate-700 dark:text-slate-300">ℹ️ How it works: </span>
-              After submitting, an admin will review your account details. Once approved, you can select this account when applying to campaigns.
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

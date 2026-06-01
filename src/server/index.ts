@@ -17,6 +17,7 @@ import calculatorRouter from "./routes/calculator";
 import notificationRouter from "./routes/notifications";
 import paymentRouter from "./routes/payments";
 import adminRouter from "./routes/admin";
+import walletRouter from "./routes/wallet";
 
 // Import OpenAPI specification generator
 import { getOpenApiSpec } from "./utils/openapi";
@@ -40,7 +41,8 @@ const routes = app
   .route("/calculator", calculatorRouter)
   .route("/notifications", notificationRouter)
   .route("/payments", paymentRouter)
-  .route("/admin", adminRouter);
+  .route("/admin", adminRouter)
+  .route("/wallet", walletRouter);
 
 // Swagger Documentation API
 app.get("/openapi.json", (c) => {
