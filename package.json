@@ -5,12 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:worker": "opennextjs-cloudflare build",
     "start": "next start",
     "lint": "next lint",
-    "deploy": "opennextjs-cloudflare deploy",
-    "upload": "opennextjs-cloudflare upload",
-    "preview": "opennextjs-cloudflare preview",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
@@ -23,7 +19,6 @@
     "@base-ui/react": "^1.5.0",
     "@hono/zod-validator": "^0.8.0",
     "@libsql/client": "^0.17.3",
-    "@opennextjs/cloudflare": "^1.19.9",
     "@tanstack/react-query": "^5.100.14",
     "ai": "^6.0.193",
     "better-auth": "^1.6.11",
@@ -54,7 +49,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
-    "typescript": "^5.7.4",
-    "wrangler": "^4.94.0"
+    "typescript": "^5.7.4"
   }
 }

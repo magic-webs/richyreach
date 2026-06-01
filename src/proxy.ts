@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// ────────────────────────────────────────────────────────────
+
 // Route access configuration
-// ────────────────────────────────────────────────────────────
+
 const PUBLIC_PATHS = ["/", "/authentication", "/calculators"];
 
 const ROLE_PATHS: Record<string, string[]> = {
@@ -24,10 +24,10 @@ function getRequiredRole(pathname: string): string | null {
   return null;
 }
 
-// ────────────────────────────────────────────────────────────
+
 // Middleware
-// ────────────────────────────────────────────────────────────
-export async function middleware(request: NextRequest) {
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Always allow public routes and API routes

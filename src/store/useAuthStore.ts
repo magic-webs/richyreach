@@ -49,7 +49,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => set({ user: defaultSessionUser, notifications: [] }),
     }),
     {
-      name: "auth-storage", // key in localStorage
+      name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

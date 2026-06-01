@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { HonoEnv } from "./types";
-import { cloudflareMiddleware } from "./middlewares/cloudflare";
 import { errorHandler, notFoundHandler } from "./middlewares/error";
 import { securityHeaders, inputSanitizer } from "./middlewares/security";
 
@@ -25,8 +24,13 @@ import { getOpenApiSpec } from "./utils/openapi";
 const app = new Hono<HonoEnv>().basePath("/api");
 
 // Apply Global Middlewares
+app.use("*", async (c, next) => {
+  if (!c.env) {
+    c.env = process.env as any;
+  }
+  await next();
+});
 app.use("*", cors());
-app.use("*", cloudflareMiddleware());
 app.use("*", securityHeaders());
 app.use("*", inputSanitizer());
 
