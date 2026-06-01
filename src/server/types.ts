@@ -1,5 +1,5 @@
 export interface HonoEnv {
-  Bindings: CloudflareEnv;
+  Bindings: any;
   Variables: {
     user?: {
       id: string;

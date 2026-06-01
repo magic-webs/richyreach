@@ -1,9 +1,9 @@
 {
-  "name": "reelio",
+  "name": "richyreach",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -11,7 +11,9 @@
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "git:push-magic": "git push -u magic main",
+    "git:push-origin": "git push -u origin main"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.67",
