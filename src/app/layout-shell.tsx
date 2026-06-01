@@ -24,6 +24,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   
   const [showNotif, setShowNotif] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   
   // Track whether we've finished our custom session bootstrap
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -184,22 +185,24 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
 
   return (
     <>
-      <div className="flex min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased overflow-x-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+      <div className="flex h-screen overflow-hidden bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
 
         {/* Background Gradients */}
         <div className="fixed top-0 left-1/4 w-[450px] h-[450px] bg-indigo-600/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
         <div className="fixed bottom-0 right-1/4 w-[450px] h-[450px] bg-purple-600/5 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
         {/* Sidebar Nav */}
-        <aside className="hidden md:flex w-64 border-r border-slate-200/80 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/35 backdrop-blur-xl shrink-0 sticky top-0 h-screen p-5 flex-col justify-between z-20">
+        <aside className={`hidden md:flex ${isCollapsed ? "w-20" : "w-64"} transition-all duration-300 border-r border-slate-200/80 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/35 backdrop-blur-xl shrink-0 h-full p-4 flex-col justify-between z-20`}>
           <div>
-            <div className="flex items-center gap-3 mb-8 px-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-[#3F030B] to-[#7E1523] text-white font-bold text-xl shadow-lg shadow-[#3F030B]/25">
+            <div className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3 px-2"} mb-8 relative`}>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-[#3F030B] to-[#7E1523] text-white font-bold text-xl shadow-lg shadow-[#3F030B]/25">
                 R
               </span>
-              <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#3F030B] via-[#7E1523] to-slate-800 dark:from-white dark:to-slate-300 font-serif-brand">
-                Richy Reach
-              </span>
+              {!isCollapsed && (
+                <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#3F030B] via-[#7E1523] to-slate-800 dark:from-white dark:to-slate-300 font-serif-brand truncate">
+                  Richy Reach
+                </span>
+              )}
             </div>
 
             <nav className="space-y-1.5">
@@ -209,24 +212,34 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive
+                    title={isCollapsed ? item.name : undefined}
+                    className={`flex items-center ${isCollapsed ? "justify-center px-0" : "gap-3 px-3.5"} py-2.5 rounded-xl text-sm font-medium transition-all ${isActive
                       ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary border-l-2 border-primary shadow-sm"
                       : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-slate-200"
                       }`}
                   >
                     <item.icon />
-                    {item.name}
+                    {!isCollapsed && <span className="truncate">{item.name}</span>}
                   </Link>
                 );
               })}
             </nav>
           </div>
+
+          <button 
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="mt-auto p-2 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <svg className={`w-5 h-5 transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+          </button>
         </aside>
 
         {/* Content Shell */}
-        <div className="flex-1 flex flex-col min-w-0 z-10 relative">
+        <div className="flex-1 flex flex-col min-w-0 z-10 relative h-full">
           {/* Top Navbar */}
-          <header className="h-16 border-b border-slate-200/80 dark:border-slate-800/50 bg-white/75 dark:bg-slate-950/60 backdrop-blur-xl px-8 flex items-center justify-between sticky top-0 z-30">
+          <header className="h-16 shrink-0 border-b border-slate-200/80 dark:border-slate-800/50 bg-white/75 dark:bg-slate-950/60 backdrop-blur-xl px-8 flex items-center justify-between z-30">
             <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">
               {currentNavItems.find((item) => item.href === pathname)?.name}
             </div>
@@ -280,7 +293,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
           </header>
 
           {/* Page Contents */}
-          <main className="flex-1 p-6 md:p-8 pb-24 md:pb-8">
+          <main className="flex-1 overflow-y-auto p-6 md:p-8 pb-24 md:pb-8">
             {children}
           </main>
         </div>

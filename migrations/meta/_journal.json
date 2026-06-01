@@ -8,6 +8,13 @@
       "when": 1779694720740,
       "tag": "0000_shocking_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1780298822632,
+      "tag": "0001_strong_sasquatch",
+      "breakpoints": true
     }
   ]
 }

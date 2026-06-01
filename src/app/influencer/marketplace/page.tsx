@@ -1,192 +1,67 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../layout-shell";
 import { api } from "@/lib/api-client";
+import { Campaign, Application } from "./_components/types";
+import { CAMPAIGN_TYPES, SORT_OPTIONS } from "./_components/utils";
+import { CampaignCard } from "./_components/campaign-card";
+import { ApplicationCard } from "./_components/application-card";
+import { InviteCard } from "./_components/invite-card";
+import { LayoutGrid, Video, Image, Smartphone, CalendarDays, Clock, ArrowDown, ArrowUp } from "lucide-react";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
-// ──────────────────────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────────────────────
-type Campaign = {
-  id: string;
-  title: string;
-  description: string;
-  budget: number;
-  campaignType: string;
-  requirements: string | null;
-  targetAudience: string | null;
-  createdAt: string;
-  brandId: string;
-  brandName: string;
-  brandLogo: string | null;
-  brandCategory: string;
-  isApplied: boolean;
-  isSaved: boolean;
-  isInvited: boolean;
-  isRecommended: boolean;
+const typeIcons: Record<string, React.ReactNode> = {
+  "All Types": <LayoutGrid className="w-5 h-5 mb-1" />,
+  "reel": <Video className="w-5 h-5 mb-1" />,
+  "post": <Image className="w-5 h-5 mb-1" />,
+  "story": <Smartphone className="w-5 h-5 mb-1" />,
+  "long-term": <CalendarDays className="w-5 h-5 mb-1" />,
 };
 
-type Application = {
-  applicationId: string;
-  campaignId: string;
-  campaignTitle: string;
-  budget: number;
-  brandName: string;
-  brandLogo: string | null;
-  status: "pending" | "accepted" | "rejected";
-  createdAt: string;
+const sortIcons: Record<string, React.ReactNode> = {
+  "recent": <Clock className="w-5 h-5 mb-1" />,
+  "budget_desc": <ArrowDown className="w-5 h-5 mb-1" />,
+  "budget_asc": <ArrowUp className="w-5 h-5 mb-1" />,
 };
 
-// ──────────────────────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────────────────────
-function fmt(n: number) { return n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n); }
-function fmtBudget(cents: number) { return `₹${fmt(cents / 100)}`; }
-function timeAgo(date: string) {
-  const d = Date.now() - new Date(date).getTime();
-  if (d < 3600_000) return `${Math.round(d / 60000)}m ago`;
-  if (d < 86400_000) return `${Math.round(d / 3600_000)}h ago`;
-  return `${Math.round(d / 86400_000)}d ago`;
-}
-
-const BUDGET_LABEL = (b: number): { label: string; cls: string } => {
-  if (b >= 1_000_000) return { label: "High Budget", cls: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20" };
-  if (b >= 200_000) return { label: "Mid Budget", cls: "text-amber-600 bg-amber-500/10 border-amber-500/20" };
-  return { label: "Low Budget", cls: "text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" };
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: "text-amber-600 bg-amber-500/10 border-amber-500/20",
-  accepted: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20",
-  rejected: "text-rose-500 bg-rose-500/10 border-rose-500/20",
-};
-
-const CAMPAIGN_TYPES = ["All Types", "reel", "post", "story", "long-term"];
-const SORT_OPTIONS = [
-  { value: "recent", label: "Most Recent" },
-  { value: "budget_desc", label: "Highest Budget" },
-  { value: "budget_asc", label: "Lowest Budget" },
-];
-
-// ──────────────────────────────────────────────────────────────
-// Campaign Card
-// ──────────────────────────────────────────────────────────────
-function CampaignCard({
-  campaign,
-  onApply,
-  onToggleSave,
-  onView,
-}: {
-  campaign: Campaign;
-  onApply: (c: Campaign) => void;
-  onToggleSave: (c: Campaign) => void;
-  onView: (c: Campaign) => void;
-}) {
-  const budgetInfo = BUDGET_LABEL(campaign.budget);
-
-  return (
-    <div className={`group relative overflow-hidden rounded-2xl bg-white/80 dark:bg-slate-900/40 border backdrop-blur-md shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.01] ${campaign.isRecommended ? "border-primary/40 dark:border-primary/30" : "border-slate-200/70 dark:border-slate-800/60"} flex flex-col`}>
-      {/* Recommended glow */}
-      {campaign.isRecommended && (
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none" />
-      )}
-      {/* Invited badge */}
-      {campaign.isInvited && (
-        <div className="absolute top-3 right-3 z-10 text-[9px] font-black px-2 py-0.5 rounded-full bg-violet-600 text-white">INVITED</div>
-      )}
-      {campaign.isRecommended && !campaign.isInvited && (
-        <div className="absolute top-3 right-3 z-10 text-[9px] font-black px-2 py-0.5 rounded-full bg-primary text-white">FOR YOU</div>
-      )}
-
-      <div className="relative z-10 p-5 flex-1 space-y-3">
-        {/* Brand row */}
-        <div className="flex items-center gap-2.5">
-          <img
-            src={campaign.brandLogo || `https://api.dicebear.com/7.x/initials/svg?seed=${campaign.brandName}`}
-            alt={campaign.brandName}
-            className="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 object-contain"
-          />
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{campaign.brandName}</p>
-            <p className="text-[9px] text-slate-400 truncate">{campaign.brandCategory}</p>
-          </div>
-        </div>
-
-        {/* Title */}
-        <div>
-          <h3 className="font-extrabold text-slate-900 dark:text-white text-sm leading-tight line-clamp-2">{campaign.title}</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 line-clamp-2 leading-relaxed">{campaign.description}</p>
-        </div>
-
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1.5">
-          <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg border ${budgetInfo.cls}`}>{budgetInfo.label}</span>
-          <span className="text-[9px] font-black px-2 py-0.5 rounded-lg border text-violet-600 bg-violet-500/10 border-violet-500/20 uppercase">{campaign.campaignType}</span>
-          <span className="text-[9px] font-bold text-slate-400 ml-auto">{timeAgo(campaign.createdAt)}</span>
-        </div>
-
-        {/* Budget + Deliverables */}
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[10px] text-slate-400 uppercase font-bold">Budget</p>
-            <p className="text-lg font-black text-slate-900 dark:text-white leading-none mt-0.5">{fmtBudget(campaign.budget)}</p>
-          </div>
-          {campaign.targetAudience && (
-            <div className="text-right max-w-[120px]">
-              <p className="text-[10px] text-slate-400 uppercase font-bold">Target</p>
-              <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 truncate mt-0.5">{campaign.targetAudience}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="relative z-10 px-5 pb-5 flex gap-2">
-        <button
-          onClick={() => onToggleSave(campaign)}
-          className={`flex-shrink-0 w-9 h-9 rounded-xl border transition-all flex items-center justify-center ${campaign.isSaved ? "bg-primary/10 border-primary/30 text-primary" : "border-slate-200 dark:border-slate-700 text-slate-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5"}`}
-          title={campaign.isSaved ? "Remove from saved" : "Save campaign"}
-        >
-          <svg className="w-4 h-4" fill={campaign.isSaved ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
-        </button>
-        <button
-          onClick={() => onView(campaign)}
-          className="flex-1 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-        >
-          View Details
-        </button>
-        {campaign.isApplied ? (
-          <div className="flex-1 py-2 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center gap-1">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Applied
-          </div>
-        ) : (
-          <button
-            onClick={() => onApply(campaign)}
-            className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-primary to-rose-700 hover:from-primary/90 hover:to-rose-600 shadow-md shadow-primary/20 hover:shadow-primary/30 transition-all cursor-pointer"
-          >
-            Apply Now
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ──────────────────────────────────────────────────────────────
-// Main Marketplace Page
-// ──────────────────────────────────────────────────────────────
 export default function InfluencerMarketplacePage() {
   const { user } = useAuth();
   const router = useRouter();
-  
+
   const queryClient = useQueryClient();
   const [view, setView] = useState<"browse" | "applications">("browse");
+  const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("All Types");
   const [sort, setSort] = useState("recent");
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px)");
+    setIsDesktop(media.matches);
+    const listener = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterType, sort]);
 
   const { data: campaigns = [], isLoading: loadingCampaigns } = useQuery({
     queryKey: ["marketplaceCampaigns", search],
@@ -256,7 +131,10 @@ export default function InfluencerMarketplacePage() {
     });
 
   const recommended = filtered.filter((c) => c.isRecommended);
-  const regular = filtered.filter((c) => !c.isRecommended);
+
+  const ITEMS_PER_PAGE = 5;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const paginatedCampaigns = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   if (user.role !== "influencer") {
     return (
@@ -297,31 +175,82 @@ export default function InfluencerMarketplacePage() {
                   {applications.applications.length > 0 && <span className="text-[9px] w-4 h-4 flex items-center justify-center rounded-full bg-white/30">{applications.applications.length}</span>}
                 </button>
               </div>
+
+              {/* Layout toggle (only in browse view) */}
+              {view === "browse" && (
+                <div className="hidden sm:flex bg-white/70 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-700/50 rounded-xl p-0.5">
+                  <button onClick={() => setLayout("grid")} className={`p-2 rounded-lg transition-all ${layout === "grid" ? "bg-white dark:bg-slate-700 text-primary shadow-sm" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`} title="Grid View">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                  </button>
+                  <button onClick={() => setLayout("list")} className={`p-2 rounded-lg transition-all ${layout === "list" ? "bg-white dark:bg-slate-700 text-primary shadow-sm" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`} title="List View">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" /></svg>
+                  </button>
+                </div>
+              )}
+
               {/* Filters toggle */}
-              <button onClick={() => setShowFilters(!showFilters)} className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 ${showFilters ? "bg-primary text-white border-primary" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500"}`}>
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-                Filters
-              </button>
+              <Drawer open={showFilters} onOpenChange={setShowFilters} direction={isDesktop ? "right" : "bottom"}>
+                <DrawerTrigger asChild>
+                  <button className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 ${showFilters ? "bg-primary text-white border-primary" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500"}`}>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                    Filters
+                  </button>
+                </DrawerTrigger>
+                <DrawerContent>
+                  <div className="mx-auto w-full max-w-sm flex flex-col h-full">
+                    <DrawerHeader className="shrink-0 text-left">
+                      <DrawerTitle className="text-xl font-extrabold text-slate-900 dark:text-white">Filters & Sort</DrawerTitle>
+                      <DrawerDescription className="text-slate-500">Refine your campaign search</DrawerDescription>
+                    </DrawerHeader>
+                    <div className="p-6 overflow-y-auto space-y-8 flex-1 md:max-h-none max-h-[60vh]">
+                      {/* Type Filter */}
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Campaign Type</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {CAMPAIGN_TYPES.map((t) => (
+                            <button
+                              key={t}
+                              onClick={() => setFilterType(t)}
+                              className={`flex flex-col items-center justify-center p-3 rounded-2xl text-[10px] font-bold transition-all border ${filterType === t ? "bg-primary/10 border-primary text-primary shadow-sm" : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
+                            >
+                              {typeIcons[t]}
+                              <span className="capitalize">{t}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Sort By */}
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Sort By</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          {SORT_OPTIONS.map((o) => (
+                            <button
+                              key={o.value}
+                              onClick={() => setSort(o.value)}
+                              className={`flex flex-col items-center justify-center p-3 rounded-2xl text-[11px] font-bold transition-all border ${sort === o.value ? "bg-primary/10 border-primary text-primary shadow-sm" : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-900"}`}
+                            >
+                              {sortIcons[o.value]}
+                              <span className="text-center">{o.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <DrawerFooter>
+                      <DrawerClose asChild>
+                        <button className="w-full py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors shadow-lg">
+                          Apply Filters
+                        </button>
+                      </DrawerClose>
+                    </DrawerFooter>
+                  </div>
+                </DrawerContent>
+              </Drawer>
             </div>
           </div>
 
-          {/* Filter bar */}
-          {showFilters && (
-            <div className="flex flex-wrap gap-3 pt-1 border-t border-slate-100 dark:border-slate-800">
-              {/* Type filter */}
-              <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
-                {CAMPAIGN_TYPES.map((t) => (
-                  <button key={t} onClick={() => setFilterType(t)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterType === t ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"}`}>{t}</button>
-                ))}
-              </div>
-              {/* Sort */}
-              <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
-                {SORT_OPTIONS.map((o) => (
-                  <button key={o.value} onClick={() => setSort(o.value)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${sort === o.value ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-800 dark:hover:text-white"}`}>{o.label}</button>
-                ))}
-              </div>
-            </div>
-          )}
+
         </div>
       </div>
 
@@ -329,9 +258,9 @@ export default function InfluencerMarketplacePage() {
       {view === "browse" && (
         <div className="space-y-8">
           {loadingCampaigns ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className={`grid gap-4 ${layout === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/20 p-5 flex flex-col gap-4 h-[220px]">
+                <div key={i} className={`rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/20 p-5 flex flex-col gap-4 ${layout === "grid" ? "h-[220px]" : "h-[220px] sm:h-[120px]"}`}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 animate-pulse" />
                     <div className="space-y-2 flex-1">
@@ -343,7 +272,7 @@ export default function InfluencerMarketplacePage() {
                     <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-3/4 animate-pulse" />
                     <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full animate-pulse" />
                   </div>
-                  <div className="mt-auto flex gap-2">
+                  <div className={`mt-auto flex gap-2 ${layout === "list" ? "sm:hidden" : ""}`}>
                     <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl flex-1 animate-pulse" />
                     <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded-xl flex-1 animate-pulse" />
                   </div>
@@ -366,9 +295,9 @@ export default function InfluencerMarketplacePage() {
                     <h2 className="text-base font-extrabold text-slate-900 dark:text-white">Recommended for You</h2>
                     <span className="text-xs text-slate-400 font-semibold">{recommended.length} matches</span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {recommended.slice(0, 3).map((c) => (
-                      <CampaignCard key={c.id} campaign={c} onApply={() => navToDetail(c)} onToggleSave={handleToggleSave} onView={() => navToDetail(c)} />
+                  <div className={`grid gap-4 ${layout === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                    {recommended.slice(0, layout === "grid" ? 3 : 2).map((c) => (
+                      <CampaignCard key={c.id} campaign={c} onApply={() => navToDetail(c)} onToggleSave={handleToggleSave} onView={() => navToDetail(c)} layout={layout} />
                     ))}
                   </div>
                 </div>
@@ -380,11 +309,35 @@ export default function InfluencerMarketplacePage() {
                   <h2 className="text-base font-extrabold text-slate-900 dark:text-white">All Campaigns</h2>
                   <span className="text-xs text-slate-400 font-semibold">{filtered.length} available</span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filtered.map((c) => (
-                    <CampaignCard key={c.id} campaign={c} onApply={() => navToDetail(c)} onToggleSave={handleToggleSave} onView={() => navToDetail(c)} />
+                <div className={`grid gap-4 ${layout === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
+                  {paginatedCampaigns.map((c) => (
+                    <CampaignCard key={c.id} campaign={c} onApply={() => navToDetail(c)} onToggleSave={handleToggleSave} onView={() => navToDetail(c)} layout={layout} />
                   ))}
                 </div>
+
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-8">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-slate-600 dark:text-slate-300"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+
+                    <span className="text-sm font-semibold text-slate-600 dark:text-slate-300 px-4">
+                      Page {page} of {totalPages}
+                    </span>
+
+                    <button
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-slate-600 dark:text-slate-300"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -417,14 +370,7 @@ export default function InfluencerMarketplacePage() {
             ) : (
               <div className="space-y-3">
                 {applications.applications.map((app: Application) => (
-                  <div key={app.applicationId} className="bg-white/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-4 backdrop-blur-md shadow-md dark:shadow-none flex items-center gap-4">
-                    <img src={app.brandLogo || `https://api.dicebear.com/7.x/initials/svg?seed=${app.brandName}`} alt={app.brandName} className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 p-1 bg-white dark:bg-slate-800 object-contain" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-slate-900 dark:text-white text-sm truncate">{app.campaignTitle}</p>
-                      <p className="text-xs text-slate-400">{app.brandName} · {fmtBudget(app.budget)} · {timeAgo(app.createdAt)}</p>
-                    </div>
-                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border shrink-0 ${STATUS_COLORS[app.status]}`}>{app.status.charAt(0).toUpperCase() + app.status.slice(1)}</span>
-                  </div>
+                  <ApplicationCard key={app.applicationId} application={app} />
                 ))}
               </div>
             )}
@@ -436,25 +382,14 @@ export default function InfluencerMarketplacePage() {
               <h2 className="text-base font-extrabold text-slate-900 dark:text-white mb-4">Campaign Invites ({applications.invites.length})</h2>
               <div className="space-y-3">
                 {applications.invites.map((inv: any) => (
-                  <div key={inv.inviteId} className="bg-white/80 dark:bg-slate-900/40 border border-violet-500/30 dark:border-violet-500/20 rounded-2xl p-4 backdrop-blur-md shadow-md dark:shadow-none flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
-                      <svg className="w-5 h-5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-slate-900 dark:text-white text-sm truncate">{inv.campaignTitle}</p>
-                      <p className="text-xs text-slate-400">{inv.brandName} · {fmtBudget(inv.budget)}</p>
-                    </div>
-                    <span className="text-[10px] font-black px-2.5 py-1 rounded-lg border text-violet-600 bg-violet-500/10 border-violet-500/20 shrink-0">Invited</span>
-                    <button
-                      onClick={() => {
-                        const camp = campaigns.find((c) => c.id === inv.campaignId);
-                        if (camp) navToDetail(camp);
-                      }}
-                      className="text-xs font-bold text-primary hover:text-primary/80 transition-colors shrink-0"
-                    >
-                      View →
-                    </button>
-                  </div>
+                  <InviteCard
+                    key={inv.inviteId}
+                    invite={inv}
+                    onNavigate={(id) => {
+                      const camp = campaigns.find((c) => c.id === id);
+                      if (camp) navToDetail(camp);
+                    }}
+                  />
                 ))}
               </div>
             </div>

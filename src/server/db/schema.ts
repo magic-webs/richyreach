@@ -170,6 +170,16 @@ export const creatorPortfolio = sqliteTable("creator_portfolio", {
   description: text("description"),
 });
 
+export const creatorServices = sqliteTable("creator_services", {
+  id: text("id").primaryKey(),
+  influencerId: text("influencer_id").notNull().references(() => influencerProfiles.userId, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  price: integer("price").notNull(), // stored in INR paise
+  deliveryTime: text("delivery_time"),
+  exampleUrl: text("example_url"),
+});
+
 // ==========================================
 // 2b. New Profile Support Tables
 // ==========================================
@@ -381,6 +391,7 @@ export const influencerProfilesRelations = relations(influencerProfiles, ({ one,
   }),
   skills: many(creatorSkills),
   portfolioItems: many(creatorPortfolio),
+  services: many(creatorServices),
   applications: many(campaignApplications),
   invites: many(campaignInvites),
   savedCampaigns: many(savedCampaigns),
@@ -531,6 +542,13 @@ export const savedCampaignsRelations = relations(savedCampaigns, ({ one }) => ({
   campaign: one(campaigns, {
     fields: [savedCampaigns.campaignId],
     references: [campaigns.id],
+  }),
+}));
+
+export const creatorServicesRelations = relations(creatorServices, ({ one }) => ({
+  influencer: one(influencerProfiles, {
+    fields: [creatorServices.influencerId],
+    references: [influencerProfiles.userId],
   }),
 }));
 

@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { InfluencerController } from "../controllers/influencer.controller";
 import { InfluencerAccountsController } from "../controllers/influencer-accounts.controller";
+import { InfluencerServicesController } from "../controllers/influencer-services.controller";
 import { requireAuth } from "../middlewares/auth";
 import { requireRole } from "../middlewares/role";
 import { rateLimiter } from "../middlewares/rateLimiter";
@@ -29,6 +30,15 @@ const influencerRouter = new Hono<HonoEnv>()
   .use("/accounts/:id", requireAuth())
   .put("/accounts/:id", requireRole(["influencer"]), InfluencerAccountsController.updateAccount)
   .delete("/accounts/:id", requireRole(["influencer"]), InfluencerAccountsController.deleteAccount)
+
+  // ── Services routes ──────────────────────────────────────────────
+  .use("/services", requireAuth())
+  .get("/services", requireRole(["influencer"]), InfluencerServicesController.listServices)
+  .post("/services", requireRole(["influencer"]), InfluencerServicesController.addService)
+
+  .use("/services/:id", requireAuth())
+  .put("/services/:id", requireRole(["influencer"]), InfluencerServicesController.updateService)
+  .delete("/services/:id", requireRole(["influencer"]), InfluencerServicesController.deleteService)
 
   // ── Influencer-only routes ───────────────────────────────────────
   .use("/profile", requireAuth())
