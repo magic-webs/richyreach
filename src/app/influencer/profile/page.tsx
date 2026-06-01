@@ -419,7 +419,7 @@ export default function InfluencerProfilePage() {
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold uppercase text-slate-500">Niche</label>
-                    <Select value={newAccNiche} onValueChange={setNewAccNiche}>
+                    <Select value={newAccNiche} onValueChange={(v) => v && setNewAccNiche(v)}>
                       <SelectTrigger className="w-full h-10 px-3 text-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white">
                         <SelectValue placeholder="Select Niche" />
                       </SelectTrigger>

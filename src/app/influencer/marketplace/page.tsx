@@ -416,7 +416,7 @@ export default function InfluencerMarketplacePage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {applications.applications.map((app) => (
+                {applications.applications.map((app: Application) => (
                   <div key={app.applicationId} className="bg-white/80 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60 rounded-2xl p-4 backdrop-blur-md shadow-md dark:shadow-none flex items-center gap-4">
                     <img src={app.brandLogo || `https://api.dicebear.com/7.x/initials/svg?seed=${app.brandName}`} alt={app.brandName} className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 p-1 bg-white dark:bg-slate-800 object-contain" />
                     <div className="flex-1 min-w-0">
