@@ -27,7 +27,7 @@ function getRequiredRole(pathname: string): string | null {
 // ────────────────────────────────────────────────────────────
 // Middleware
 // ────────────────────────────────────────────────────────────
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Always allow public routes and API routes
