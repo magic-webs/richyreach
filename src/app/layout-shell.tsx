@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Icons from "@/components/icons";
 import { authClient } from "@/lib/auth-client";
 import { useAuthStore } from "@/store/useAuthStore";
+import { Rocket } from "lucide-react";
 
 export const useAuth = () => {
   const user = useAuthStore((s) => s.user);
@@ -21,11 +22,11 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const notifications = useAuthStore((s) => s.notifications);
   const markNotificationsRead = useAuthStore((s) => s.markNotificationsRead);
   const setNotifications = useAuthStore((s) => s.setNotifications);
-  
+
   const [showNotif, setShowNotif] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  
+
   // Track whether we've finished our custom session bootstrap
   const [sessionChecked, setSessionChecked] = useState(false);
   const bootstrapRan = useRef(false);
@@ -98,7 +99,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   // Dynamic role-based navigation item filtering
   const getRoleNavItems = () => {
     if (user.id === "") return [];
-    
+
     const items = [];
     if (user.role === "brand") {
       items.push(
@@ -169,10 +170,10 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const pathRole = pathname.startsWith("/brand")
     ? "brand"
     : pathname.startsWith("/influencer")
-    ? "influencer"
-    : pathname.startsWith("/admin")
-    ? "admin"
-    : null;
+      ? "influencer"
+      : pathname.startsWith("/admin")
+        ? "admin"
+        : null;
 
   if (pathRole && user.role !== "admin" && pathRole !== user.role) {
     router.replace(roleDashboard);
@@ -226,7 +227,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
             </nav>
           </div>
 
-          <button 
+          <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="mt-auto p-2 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
@@ -244,7 +245,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
               {currentNavItems.find((item) => item.href === pathname)?.name}
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               {/* Notification Center */}
               <div className="relative">
                 <button
@@ -289,6 +290,17 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
                   </div>
                 )}
               </div>
+              <div className="flex md:hidden items-center gap-1.5">
+                {currentNavItems.filter(item => ['Messaging'].includes(item.name)).map(item => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-white/60 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800/80 rounded-xl transition-all"
+                  >
+                    <Icons.Send />
+                  </Link>
+                ))}
+              </div>
             </div>
           </header>
 
@@ -298,27 +310,49 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
           </main>
         </div>
         {/* Mobile Bottom Tab Bar */}
-        <nav className="flex md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/90 dark:bg-slate-950/90 border-t border-slate-200 dark:border-slate-800/60 backdrop-blur-xl items-center justify-around px-2 z-40 pb-safe shadow-[0_-8px_30px_rgba(0,0,0,0.1)]">
-          {currentNavItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex flex-col items-center justify-center flex-1 h-full py-1 text-[9px] font-extrabold transition-all ${isActive
-                  ? "text-primary dark:text-primary-foreground scale-105"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-755 dark:hover:text-slate-200"
-                  }`}
-              >
-                <div className={`p-1 rounded-xl transition-all ${isActive ? "bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-foreground" : ""
-                  }`}>
-                  <item.icon />
-                </div>
-                <span className="mt-0.5 max-w-[60px] truncate text-center">{item.name}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="fixed md:hidden bottom-4 left-4 right-4 z-50">
+          <nav className="flex items-center justify-around h-16 px-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/40 dark:border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.12)] relative">
+            {(() => {
+              const filteredItems = currentNavItems.filter(item => !['Wallet', 'Messaging'].includes(item.name));
+              const activeIndex = filteredItems.findIndex(item => pathname === item.href || pathname.startsWith(item.href + '/'));
+
+              return (
+                <>
+                  {/* Active Indicator Background */}
+                  <div
+                    className="absolute h-[85%] top-[7.5%] rounded-full bg-gradient-to-tr from-[#3F030B] to-[#7E1523] dark:from-primary dark:to-primary-foreground transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-0"
+                    style={{
+                      width: `calc((100% - 16px) / ${filteredItems.length} - 8px)`,
+                      left: activeIndex >= 0 ? `calc(8px + ((100% - 16px) / ${filteredItems.length}) * ${activeIndex} + 4px)` : '-100%',
+                      opacity: activeIndex >= 0 ? 1 : 0
+                    }}
+                  />
+
+                  {filteredItems.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={`relative z-10 flex flex-col items-center justify-center flex-1 h-full py-1 text-[10px] font-bold transition-all duration-300 ${isActive
+                          ? "text-white scale-105"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                          }`}
+                      >
+                        <div className={`p-1 transition-transform duration-300 ${isActive ? "-translate-y-1 drop-shadow-md" : "translate-y-1"}`}>
+                          <item.icon />
+                        </div>
+                        <span className={`transition-all duration-300 text-[9px] leading-none whitespace-nowrap truncate w-full text-center px-1 ${isActive ? "opacity-100 translate-y-0 drop-shadow-md" : "opacity-0 translate-y-2 absolute bottom-1"}`}>
+                          {item.name}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </>
+              );
+            })()}
+          </nav>
+        </div>
       </div>
     </>
   );
