@@ -228,6 +228,8 @@ export const campaigns = sqliteTable("campaigns", {
   requirements: text("requirements"),
   status: text("status").$type<"draft" | "active" | "completed" | "cancelled">().notNull().default("draft"),
   expectedReach: integer("expected_reach").notNull().default(0),
+  isArena: integer("is_arena", { mode: "boolean" }).notNull().default(false),
+  maxReachCap: integer("max_reach_cap"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
@@ -266,6 +268,18 @@ export const contracts = sqliteTable("contracts", {
   terms: text("terms").notNull(),
   status: text("status").$type<"draft" | "signed" | "active" | "terminated">().notNull().default("draft"),
   signedAt: integer("signed_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+export const arenaParticipants = sqliteTable("arena_participants", {
+  id: text("id").primaryKey(),
+  campaignId: text("campaign_id").notNull().references(() => campaigns.id, { onDelete: "cascade" }),
+  influencerId: text("influencer_id").notNull().references(() => influencerProfiles.userId, { onDelete: "cascade" }),
+  influencerAccountId: text("influencer_account_id").references(() => influencerAccounts.id, { onDelete: "set null" }),
+  postUrl: text("post_url"),
+  accountReach: integer("account_reach").notNull().default(0),
+  coinsAwarded: integer("coins_awarded").notNull().default(0),
+  status: text("status").$type<"pending" | "approved" | "rejected">().notNull().default("pending"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
@@ -401,6 +415,7 @@ export const influencerProfilesRelations = relations(influencerProfiles, ({ one,
   reachScores: many(reachScores),
   audienceData: many(audienceData),
   savedByBrands: many(savedInfluencers),
+  arenaParticipations: many(arenaParticipants),
 }));
 
 export const brandProfilesRelations = relations(brandProfiles, ({ one, many }) => ({
@@ -426,6 +441,7 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
   contracts: many(contracts),
   reviews: many(reviews),
   savedBy: many(savedCampaigns),
+  arenaParticipants: many(arenaParticipants),
 }));
 
 export const campaignApplicationsRelations = relations(campaignApplications, ({ one }) => ({
@@ -575,6 +591,17 @@ export const brandAccountsRelations = relations(brandAccounts, ({ one }) => ({
     fields: [brandAccounts.verifiedBy],
     references: [users.id],
     relationName: "brandAccountVerifier",
+  }),
+}));
+
+export const arenaParticipantsRelations = relations(arenaParticipants, ({ one }) => ({
+  campaign: one(campaigns, {
+    fields: [arenaParticipants.campaignId],
+    references: [campaigns.id],
+  }),
+  influencer: one(influencerProfiles, {
+    fields: [arenaParticipants.influencerId],
+    references: [influencerProfiles.userId],
   }),
 }));
 

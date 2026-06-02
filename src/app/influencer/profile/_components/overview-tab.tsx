@@ -125,9 +125,9 @@ export function OverviewTab({ accounts, accountsLoading, fetchAccounts }: Overvi
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">All Profiles</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage your connected Instagram profiles and niches.</p>
           </div>
-          
+
           <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-            <DialogTrigger render={<Button className="w-full sm:w-auto font-bold rounded-xl shadow-md gap-2" size="sm" />}>
+            <DialogTrigger render={<Button className="w-full sm:w-auto font-bold rounded-xl shadow-md gap-2" />}>
               <Plus className="w-4 h-4" />
               Add Account
             </DialogTrigger>
@@ -148,12 +148,12 @@ export function OverviewTab({ accounts, accountsLoading, fetchAccounts }: Overvi
                     <Label htmlFor="handle" className="text-xs">Instagram Handle *</Label>
                     <div className="relative flex items-center">
                       <span className="absolute left-3 text-slate-400 font-bold z-10 text-sm">@</span>
-                      <Input 
+                      <Input
                         id="handle"
-                        placeholder="username" 
-                        value={newAccHandle} 
-                        onChange={e => setNewAccHandle(e.target.value)} 
-                        className="pl-8 rounded-xl bg-slate-50 dark:bg-slate-900" 
+                        placeholder="username"
+                        value={newAccHandle}
+                        onChange={e => setNewAccHandle(e.target.value)}
+                        className="pl-8 rounded-xl bg-slate-50 dark:bg-slate-900"
                       />
                     </div>
                   </div>
@@ -173,25 +173,25 @@ export function OverviewTab({ accounts, accountsLoading, fetchAccounts }: Overvi
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="followers" className="text-xs">Followers</Label>
-                    <Input 
+                    <Input
                       id="followers"
-                      type="number" 
-                      placeholder="e.g. 50000" 
-                      value={newAccFollowers} 
-                      onChange={e => setNewAccFollowers(e.target.value)} 
-                      className="rounded-xl bg-slate-50 dark:bg-slate-900" 
+                      type="number"
+                      placeholder="e.g. 50000"
+                      value={newAccFollowers}
+                      onChange={e => setNewAccFollowers(e.target.value)}
+                      className="rounded-xl bg-slate-50 dark:bg-slate-900"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="engagement" className="text-xs">Engagement Rate (%)</Label>
-                    <Input 
+                    <Input
                       id="engagement"
-                      type="number" 
-                      step="0.1" 
-                      placeholder="e.g. 3.5" 
-                      value={newAccEngagement} 
-                      onChange={e => setNewAccEngagement(e.target.value)} 
-                      className="rounded-xl bg-slate-50 dark:bg-slate-900" 
+                      type="number"
+                      step="0.1"
+                      placeholder="e.g. 3.5"
+                      value={newAccEngagement}
+                      onChange={e => setNewAccEngagement(e.target.value)}
+                      className="rounded-xl bg-slate-50 dark:bg-slate-900"
                     />
                   </div>
                 </div>
@@ -199,35 +199,35 @@ export function OverviewTab({ accounts, accountsLoading, fetchAccounts }: Overvi
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="views" className="text-xs">Avg Views / Reel</Label>
-                    <Input 
+                    <Input
                       id="views"
-                      type="number" 
-                      placeholder="e.g. 25000" 
-                      value={newAccAvgViews} 
-                      onChange={e => setNewAccAvgViews(e.target.value)} 
-                      className="rounded-xl bg-slate-50 dark:bg-slate-900" 
+                      type="number"
+                      placeholder="e.g. 25000"
+                      value={newAccAvgViews}
+                      onChange={e => setNewAccAvgViews(e.target.value)}
+                      className="rounded-xl bg-slate-50 dark:bg-slate-900"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="country" className="text-xs">Country</Label>
-                    <Input 
+                    <Input
                       id="country"
-                      placeholder="e.g. India" 
-                      value={newAccCountry} 
-                      onChange={e => setNewAccCountry(e.target.value)} 
-                      className="rounded-xl bg-slate-50 dark:bg-slate-900" 
+                      placeholder="e.g. India"
+                      value={newAccCountry}
+                      onChange={e => setNewAccCountry(e.target.value)}
+                      className="rounded-xl bg-slate-50 dark:bg-slate-900"
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="bio" className="text-xs">Short Bio (optional)</Label>
-                  <Input 
+                  <Input
                     id="bio"
-                    placeholder="Tell brands about this account" 
-                    value={newAccBio} 
-                    onChange={e => setNewAccBio(e.target.value)} 
-                    className="rounded-xl bg-slate-50 dark:bg-slate-900" 
+                    placeholder="Tell brands about this account"
+                    value={newAccBio}
+                    onChange={e => setNewAccBio(e.target.value)}
+                    className="rounded-xl bg-slate-50 dark:bg-slate-900"
                   />
                 </div>
               </div>

@@ -2,11 +2,13 @@ import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
 
-let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null;
+const globalForDb = globalThis as unknown as {
+  dbInstance: ReturnType<typeof drizzle<typeof schema>> | undefined;
+};
 
 export function getDb(env?: Record<string, any>) {
   // If we already have an active database instance, return it
-  if (dbInstance) return dbInstance;
+  if (globalForDb.dbInstance) return globalForDb.dbInstance;
 
   // Resolve Turso credentials
   let url = env?.TURSO_DATABASE_URL || process.env.TURSO_DATABASE_URL;
@@ -32,6 +34,6 @@ export function getDb(env?: Record<string, any>) {
   console.log("[getDb] Connecting to DB URL:", JSON.stringify(url));
 
   const client = createClient({ url, authToken });
-  dbInstance = drizzle(client, { schema });
-  return dbInstance;
+  globalForDb.dbInstance = drizzle(client, { schema });
+  return globalForDb.dbInstance;
 }

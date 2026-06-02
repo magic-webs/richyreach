@@ -115,6 +115,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       items.push(
         { name: "Dashboard", href: "/influencer/dashboard", icon: Icons.Dashboard },
         { name: "Marketplace", href: "/influencer/marketplace", icon: Icons.Marketplace },
+        { name: "Arena", href: "/influencer/arena", icon: () => <Rocket className="w-5 h-5" /> },
         { name: "Earnings", href: "/influencer/earnings", icon: Icons.Earnings },
         { name: "Wallet", href: "/influencer/wallet", icon: () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg> },
         { name: "Messaging", href: "/influencer/chat", icon: Icons.Chat },
@@ -305,7 +306,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
           </header>
 
           {/* Page Contents */}
-          <main className="flex-1 overflow-y-auto p-6 md:p-8 pb-24 md:pb-8">
+          <main className="flex-1 overflow-y-auto p-2 md:p-8 pb-24 md:pb-8">
             {children}
           </main>
         </div>
@@ -313,7 +314,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         <div className="fixed md:hidden bottom-4 left-4 right-4 z-50">
           <nav className="flex items-center justify-around h-16 px-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/40 dark:border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.12)] relative">
             {(() => {
-              const filteredItems = currentNavItems.filter(item => !['Wallet', 'Messaging'].includes(item.name));
+              const filteredItems = currentNavItems.filter(item => !['Wallet', 'Messaging', 'Earnings'].includes(item.name));
               const activeIndex = filteredItems.findIndex(item => pathname === item.href || pathname.startsWith(item.href + '/'));
 
               return (

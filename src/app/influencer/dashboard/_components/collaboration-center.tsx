@@ -17,13 +17,13 @@ export function CollaborationCenter({ campaignsData, campaignsLoading }: Collabo
         <CardDescription>Track applications, invites, and contract statuses</CardDescription>
       </CardHeader>
       <CardContent className="px-4 pt-6 flex-1">
-        <Tabs defaultValue="invites" className="flex flex-col h-full space-y-6">
+        <Tabs defaultValue="applications" className="flex flex-col h-full space-y-6">
           <TabsList className="bg-slate-100 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-850 p-1 rounded-xl grid grid-cols-2 w-full max-w-md mx-auto sm:mx-0">
-            <TabsTrigger value="invites" className="rounded-lg text-xs sm:text-sm font-semibold mr-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 shadow-sm transition-all">
-              Invites ({campaignsData.invites?.length || 0})
-            </TabsTrigger>
-            <TabsTrigger value="applications" className="rounded-lg text-xs sm:text-sm font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 shadow-sm transition-all">
+            <TabsTrigger value="applications" className="rounded-lg text-xs sm:text-sm mr-2 font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 shadow-sm transition-all">
               Proposals ({campaignsData.applications?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="invites" className="rounded-lg text-xs sm:text-sm font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 shadow-sm transition-all">
+              Invites ({campaignsData.invites?.length || 0})
             </TabsTrigger>
           </TabsList>
 
@@ -110,7 +110,7 @@ export function CollaborationCenter({ campaignsData, campaignsLoading }: Collabo
                   You haven't applied to any campaigns yet. Browse the marketplace to discover opportunities.
                 </p>
                 <Link
-                  href="/marketplace"
+                  href="/influencer/marketplace"
                   className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:text-primary/80 transition-colors bg-primary/10 px-4 py-2 rounded-full"
                 >
                   Browse Marketplace <ArrowRight className="w-3 h-3" />
@@ -123,8 +123,13 @@ export function CollaborationCenter({ campaignsData, campaignsLoading }: Collabo
                   className="group p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/45 border border-slate-150 dark:border-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
                   <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-[10px] font-extrabold uppercase text-slate-500 tracking-wider">Proposal</span>
+                      {app.instagramHandle && (
+                        <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                          @{app.instagramHandle}
+                        </span>
+                      )}
                       <span
                         className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${app.status === "accepted"
                           ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"

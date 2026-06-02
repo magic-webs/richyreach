@@ -3,6 +3,7 @@ import { Montserrat, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import LayoutShell from "./layout-shell";
+import { Toaster } from "@/components/ui/sonner";
 
 const montserrat = Montserrat({
 	variable: "--font-sans",
@@ -29,6 +30,7 @@ export default function RootLayout({
 			<body className={`${montserrat.variable} ${montserrat.className} antialiased bg-background text-foreground`}>
 				<Providers>
 					<LayoutShell>{children}</LayoutShell>
+					<Toaster />
 				</Providers>
 			</body>
 		</html>

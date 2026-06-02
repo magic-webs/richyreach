@@ -512,6 +512,7 @@ export class InfluencerService {
   static async getCampaigns(env: Record<string, any>, influencerId: string) {
     const db = getDb(env);
 
+    // Fetch applications
     const applications = await db
       .select({
         applicationId: schema.campaignApplications.id,
@@ -525,10 +526,13 @@ export class InfluencerService {
         statusCampaign: schema.campaigns.status,
         brandName: schema.brandProfiles.companyName,
         brandLogo: schema.brandProfiles.logo,
+        instagramHandle: sql<string>`COALESCE(${schema.influencerAccounts.instagramHandle}, ${schema.influencerProfiles.instagramHandle})`.as("instagram_handle"),
       })
       .from(schema.campaignApplications)
       .innerJoin(schema.campaigns, eq(schema.campaignApplications.campaignId, schema.campaigns.id))
       .innerJoin(schema.brandProfiles, eq(schema.campaigns.brandId, schema.brandProfiles.userId))
+      .innerJoin(schema.influencerProfiles, eq(schema.campaignApplications.influencerId, schema.influencerProfiles.userId))
+      .leftJoin(schema.influencerAccounts, eq(schema.campaignApplications.influencerAccountId, schema.influencerAccounts.id))
       .where(eq(schema.campaignApplications.influencerId, influencerId));
 
     const invites = await db

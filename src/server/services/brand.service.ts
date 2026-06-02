@@ -75,6 +75,8 @@ export class BrandService {
       expectedReach?: number;
       allowFraction?: boolean;
       brandAccountId?: string | null;
+      isArena?: boolean;
+      maxReachCap?: number | null;
     }
   ) {
     const db = getDb(env);
@@ -99,6 +101,8 @@ export class BrandService {
       brandAccountId: campaignData.brandAccountId || null,
       status: "active" as const, // active on creation
       expectedReach: campaignData.expectedReach || 0,
+      isArena: campaignData.isArena || false,
+      maxReachCap: campaignData.maxReachCap || null,
       createdAt: new Date(),
     };
 
@@ -198,7 +202,7 @@ export class BrandService {
         status: schema.campaignApplications.status,
         createdAt: schema.campaignApplications.createdAt,
         influencerId: schema.influencerProfiles.userId,
-        instagramHandle: schema.influencerProfiles.instagramHandle,
+        instagramHandle: sql<string>`COALESCE(${schema.influencerAccounts.instagramHandle}, ${schema.influencerProfiles.instagramHandle})`.as("instagram_handle"),
         followers: schema.influencerProfiles.followers,
         engagementRate: schema.influencerProfiles.engagementRate,
         name: schema.users.name,
@@ -207,6 +211,7 @@ export class BrandService {
       .from(schema.campaignApplications)
       .innerJoin(schema.influencerProfiles, eq(schema.campaignApplications.influencerId, schema.influencerProfiles.userId))
       .innerJoin(schema.users, eq(schema.influencerProfiles.userId, schema.users.id))
+      .leftJoin(schema.influencerAccounts, eq(schema.campaignApplications.influencerAccountId, schema.influencerAccounts.id))
       .where(eq(schema.campaignApplications.campaignId, campaignId));
 
     // Fetch invites

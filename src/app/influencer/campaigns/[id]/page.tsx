@@ -7,7 +7,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Check, Verified } from "lucide-react";
 
 export default function InfluencerCampaignDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = React.use(params);
@@ -66,23 +68,27 @@ export default function InfluencerCampaignDetailsPage({ params }: { params: Prom
     mutationFn: async (propText: string) => {
       const res = await (api.api.influencers.apply[":campaignId"].$post as any)({
         param: { campaignId: id },
-        json: { 
+        json: {
           proposal: propText,
           ...(selectedAccountId ? { influencerAccountId: selectedAccountId } : {})
         },
       });
-      if (!res.ok) throw new Error("Failed to apply");
-      const result = await res.json();
-      if (!result.success) throw new Error(result.error as string || "Failed to apply");
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || !result.success) {
+        if (result.meta?.details?.proposal?._errors?.[0]) {
+          throw new Error(result.meta.details.proposal._errors[0]);
+        }
+        throw new Error(result.error || "Failed to apply");
+      }
       return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["influencerCampaign", id] });
-      alert("Application submitted successfully!");
+      toast.success("Application submitted successfully!");
       router.push("/influencer/marketplace");
     },
     onError: (err: any) => {
-      alert("Error submitting application: " + err.message);
+      toast.error(err.message || "Error submitting application");
     }
   });
 
@@ -124,17 +130,17 @@ export default function InfluencerCampaignDetailsPage({ params }: { params: Prom
         <div className="p-6 md:p-8 border-b border-slate-150 dark:border-slate-800/60">
           <div className="flex flex-col md:flex-row gap-6 justify-between items-start">
             <div className="flex items-start gap-4">
-              <img 
-                src={c.brandLogo || `https://api.dicebear.com/7.x/initials/svg?seed=${c.brandName}`} 
-                alt={c.brandName} 
-                className="w-16 h-16 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 object-contain" 
+              <img
+                src={c.brandLogo || `https://api.dicebear.com/7.x/initials/svg?seed=${c.brandName}`}
+                alt={c.brandName}
+                className="w-16 h-16 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1.5 object-contain"
               />
               <div>
                 <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white leading-tight">{c.title}</h1>
                 <p className="text-sm font-semibold text-slate-500 mt-1">{c.brandName} · {c.brandCategory}</p>
               </div>
             </div>
-            
+
             <div className="flex flex-wrap gap-2 md:text-right">
               <span className="text-[10px] font-black px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                 {budgetStr} BUDGET
@@ -186,18 +192,30 @@ export default function InfluencerCampaignDetailsPage({ params }: { params: Prom
               {!c.isApplied ? (
                 <div className="space-y-4">
                   <h3 className="font-bold text-slate-900 dark:text-white">Submit Proposal</h3>
-                  
+
                   {/* Account Selection */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Apply with Account</label>
                     <Select value={selectedAccountId} onValueChange={(val) => val && setSelectedAccountId(val)}>
                       <SelectTrigger className="w-full p-3 h-auto text-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl focus:ring-1 focus:ring-primary/20">
-                        <SelectValue placeholder="Select an Account" />
+                        <SelectValue placeholder="Select an Account">
+                          {selectedAccountId ? (
+                            <div className="flex items-center">
+                              {accounts?.find(a => a.id === selectedAccountId)?.verified && <Verified className="w-4 h-4 text-blue-600 mr-2" />}
+                              {accounts?.find(a => a.id === selectedAccountId)?.instagramHandle}
+                            </div>
+                          ) : (
+                            "Select an Account"
+                          )}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {accounts?.map((acc) => (
-                          <SelectItem key={acc.id} value={acc.id}>
-                            @{acc.instagramHandle} {acc.verified ? "✅" : "(Unverified)"}
+                          <SelectItem className="flex items-center gap-2" key={acc.id} value={acc.id}>
+                            <div className="flex items-center">
+                              {acc.verified && <Verified className="w-4 h-4 text-blue-500 mr-2 " />}
+                              {acc.instagramHandle}
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -216,7 +234,7 @@ export default function InfluencerCampaignDetailsPage({ params }: { params: Prom
                     const isSelectedVerified = selectedAccountId
                       ? accounts?.find(a => a.id === selectedAccountId)?.verified
                       : false;
-                      
+
                     if (selectedAccountId && !isSelectedVerified) {
                       return (
                         <div className="text-xs text-rose-500 bg-rose-50 dark:bg-rose-500/10 p-3 rounded-lg border border-rose-200 dark:border-rose-500/20">
@@ -224,7 +242,7 @@ export default function InfluencerCampaignDetailsPage({ params }: { params: Prom
                         </div>
                       );
                     }
-                    
+
                     return (
                       <button
                         onClick={() => applyMutation.mutate(proposal)}

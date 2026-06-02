@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { useAuth } from "../layout-shell";
 
 // ──────────────────────────────────────────────────────────────
@@ -96,8 +97,6 @@ function AuthPageInner() {
 
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(0);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Sync role from ?role= query param
   useEffect(() => {
@@ -117,18 +116,15 @@ function AuthPageInner() {
     }
   }, [timer]);
 
-  const clearAlerts = () => { setErrorMsg(null); setSuccessMsg(null); };
-
   // Derive current colour set
   const colors = ROLE_COLORS[role];
 
   // ── OTP Request ────────────────────────────────────────────
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearAlerts();
     setLoading(true);
     if (!identifier.trim()) {
-      setErrorMsg("Please enter your email or phone number.");
+      toast.error("Please enter your email or phone number.");
       setLoading(false);
       return;
     }
@@ -139,13 +135,17 @@ function AuthPageInner() {
         body: JSON.stringify({ identifier: identifier.trim(), method: authMethod, mode: activeTab }),
       });
       const data = await res.json() as any;
-      if (!res.ok) throw new Error(data.message || "Failed to send verification code.");
-      setSuccessMsg(`Verification code sent to your ${authMethod === "email" ? "email address" : "WhatsApp number"}.`);
+      console.log("Data:", data);
+      if (!res.ok) {
+        toast.error(data.error || "Failed to send verification code.");
+        return;
+      }
+      toast.success(`Verification code sent to your ${authMethod === "email" ? "email address" : "WhatsApp number"}.`);
       setStep("verify");
       setTimer(59);
       setTimeout(() => { if (otpRefs.current[0]) otpRefs.current[0].focus(); }, 200);
     } catch (err: any) {
-      setErrorMsg(err.message || "Failed to deliver verification code. Please check your inputs.");
+      toast.error(err.message || "Failed to deliver verification code. Please check your inputs.");
     } finally {
       setLoading(false);
     }
@@ -154,11 +154,10 @@ function AuthPageInner() {
   // ── OTP Verify ─────────────────────────────────────────────
   const handleVerifyOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    clearAlerts();
     setLoading(true);
     const code = otpCodes.join("");
     if (code.length !== 6) {
-      setErrorMsg("Please enter the complete 6-digit code.");
+      toast.error("Please enter the complete 6-digit code.");
       setLoading(false);
       return;
     }
@@ -172,7 +171,7 @@ function AuthPageInner() {
       });
       const data = await res.json() as any;
       if (!res.ok) throw new Error(data.message || "Invalid or expired verification code.");
-      setSuccessMsg("Verification successful! Authenticating session...");
+      toast.success("Verification successful! Authenticating session...");
       // Cookie is set by the server — no need to store token in localStorage
       updateUser({
         id: data.data.user.id,
@@ -187,13 +186,13 @@ function AuthPageInner() {
         redirectTo && redirectTo.startsWith("/")
           ? redirectTo
           : data.data.user.role === "brand"
-          ? "/brand/dashboard"
-          : data.data.user.role === "influencer"
-          ? "/influencer/dashboard"
-          : "/admin/dashboard";
+            ? "/brand/dashboard"
+            : data.data.user.role === "influencer"
+              ? "/influencer/dashboard"
+              : "/admin/dashboard";
       router.push(destination);
     } catch (err: any) {
-      setErrorMsg(err.message || "Authentication failed. Please verify the code and try again.");
+      toast.error(err.message || "Authentication failed. Please verify the code and try again.");
     } finally {
       setLoading(false);
     }
@@ -267,7 +266,7 @@ function AuthPageInner() {
                     type="button"
                     key={r}
                     id={`role-tab-${r}`}
-                    onClick={() => { setRole(r); clearAlerts(); }}
+                    onClick={() => { setRole(r); }}
                     className={`py-2 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer ${role === r ? ROLE_COLORS[r].pill : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"}`}
                   >
                     {r === "brand" ? "Brand" : r}
@@ -282,7 +281,7 @@ function AuthPageInner() {
                     type="button"
                     key={t}
                     id={`auth-tab-${t}`}
-                    onClick={() => { setActiveTab(t); clearAlerts(); }}
+                    onClick={() => { setActiveTab(t); }}
                     className={`flex-1 pb-3 text-sm font-extrabold transition-all border-b-2 cursor-pointer ${activeTab === t ? colors.tab : "text-slate-400 dark:text-slate-500 border-transparent hover:text-slate-600 dark:hover:text-slate-350"}`}
                   >
                     {t === "login" ? "Sign In" : "Register"}
@@ -295,7 +294,7 @@ function AuthPageInner() {
                 <button
                   type="button"
                   id="auth-method-email"
-                  onClick={() => { setAuthMethod("email"); clearAlerts(); }}
+                  onClick={() => { setAuthMethod("email"); }}
                   className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all ${authMethod === "email" ? `bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 ${colors.link}` : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-350"}`}
                 >
                   <MailIcon />
@@ -304,7 +303,7 @@ function AuthPageInner() {
                 <button
                   type="button"
                   id="auth-method-whatsapp"
-                  onClick={() => { setAuthMethod("whatsapp"); clearAlerts(); }}
+                  onClick={() => { setAuthMethod("whatsapp"); }}
                   className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all ${authMethod === "whatsapp" ? "bg-white dark:bg-slate-800 shadow-sm border border-slate-200/50 dark:border-slate-700/50 text-emerald-600 dark:text-emerald-400" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-350"}`}
                 >
                   <WhatsAppIcon />
@@ -332,21 +331,6 @@ function AuthPageInner() {
 
         {/* ── Form Body ── */}
         <div className="px-8 pb-8 pt-4 space-y-5">
-
-          {/* Alert banners */}
-          {successMsg && (
-            <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-400 text-xs font-semibold animate-fadeIn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5 shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-              {successMsg}
-            </div>
-          )}
-
-          {errorMsg && (
-            <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-600 dark:text-rose-400 text-xs font-semibold animate-fadeIn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5 shrink-0"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-              {errorMsg}
-            </div>
-          )}
 
           {/* ── Step 1: Request OTP ── */}
           {step === "request" && (

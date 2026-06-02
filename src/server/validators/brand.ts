@@ -18,6 +18,8 @@ export const createCampaignSchema = z.object({
   expectedReach: z.number().int().nonnegative().optional(),
   allowFraction: z.boolean().optional(),
   brandAccountId: z.string().optional().nullable(),
+  isArena: z.boolean().optional(),
+  maxReachCap: z.number().int().nonnegative().optional().nullable(),
 });
 
 export const inviteInfluencerSchema = z.object({

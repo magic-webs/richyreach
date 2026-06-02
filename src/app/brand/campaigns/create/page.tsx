@@ -30,6 +30,8 @@ export default function CreateCampaignPage() {
   const [targetAudience, setTargetAudience] = useState("");
   const [requirements, setRequirements] = useState("");
   const [allowFraction, setAllowFraction] = useState(false);
+  const [isArena, setIsArena] = useState(false);
+  const [maxReachCap, setMaxReachCap] = useState("100000");
 
   // AI generated and editable fields
   const [aiTitle, setAiTitle] = useState("");
@@ -69,6 +71,11 @@ export default function CreateCampaignPage() {
     try {
       const selectedBrand = brandAccounts.find(a => a.id === selectedBrandAccountId);
 
+      let finalRequirements = requirements;
+      if (isArena) {
+        finalRequirements += `\n\n**Arena Contest Rules:**\n- All posts must include 3 collabs to be eligible: Brand + RR + Influencer.\n- Maximum account reach capping for payout is ${maxReachCap}.`;
+      }
+
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -79,7 +86,7 @@ export default function CreateCampaignPage() {
             format: campaignType,
             tier: influencerTier,
             targetAudience,
-            baseRequirements: requirements,
+            baseRequirements: finalRequirements,
             allowFraction,
             brandName: selectedBrand?.companyName
           }
@@ -125,6 +132,8 @@ export default function CreateCampaignPage() {
           expectedReach: 150000,
           brandAccountId: selectedBrandAccountId,
           allowFraction,
+          isArena,
+          maxReachCap: isArena ? parseInt(maxReachCap) : null,
         },
       });
 
@@ -230,6 +239,36 @@ export default function CreateCampaignPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label className="text-primary/80 dark:text-primary/80 text-xs font-bold uppercase tracking-wider">Campaign Category</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div
+                    onClick={() => setIsArena(false)}
+                    className={`p-4 rounded-xl border cursor-pointer transition-all ${!isArena ? 'border-primary bg-primary/5 shadow-sm' : 'border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-950/50'}`}
+                  >
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Standard Campaign</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Normal influencer collaboration.</p>
+                  </div>
+                  <div
+                    onClick={() => setIsArena(true)}
+                    className={`p-4 rounded-xl border cursor-pointer transition-all ${isArena ? 'border-primary bg-primary/5 shadow-sm' : 'border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-950/50'}`}
+                  >
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Arena Contest</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Performance-based rewards for reach.</p>
+                  </div>
+                </div>
+              </div>
+
+              {isArena && (
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-primary/80 dark:text-primary/80 text-xs font-bold uppercase tracking-wider">Max Reach Capping</Label>
+                    <Input type="number" min="1000" value={maxReachCap} onChange={(e) => setMaxReachCap(e.target.value)} className="bg-white dark:bg-slate-950/50 border-slate-200 dark:border-slate-700/50 text-slate-900 dark:text-white rounded-xl h-12 focus:border-primary" required />
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Coins will be paid for account reach (100 coins = 1 Rs). This sets a limit on maximum payout.</p>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label className="text-primary/80 dark:text-primary/80 text-xs font-bold uppercase tracking-wider">Campaign Title</Label>

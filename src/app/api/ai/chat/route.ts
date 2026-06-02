@@ -17,29 +17,29 @@ export async function POST(req: Request) {
 
     const { title, budget, format, tier, targetAudience, baseRequirements, allowFraction, brandName } = data || {};
 
-    const systemPrompt = `You are an expert Influencer Marketing Campaign Manager AI for "Richy Reach".
-Your goal is to take a brand's raw braindump and campaign details, and transform them into a professional, highly-polished campaign brief.
+    const systemPrompt = `You are a campaign manager for "Richy Reach".
+Write a simple and clear campaign brief using easy English words. Keep it short and do not use complex words.
 
-Here are the details provided by the brand "${brandName || 'Unknown'}":
-- Original Title: ${title || "N/A"}
-- Budget: $${budget || "N/A"}
-- Content Format: ${format || "N/A"}
-- Creator Tier: ${tier || "N/A"}
-- Target Audience: ${targetAudience || "N/A"}
-- Raw Requirements: ${baseRequirements || "N/A"}
-- Allow Fractional/Multiple Creators: ${allowFraction ? "Yes" : "No"}
+Brand Name: ${brandName || 'Unknown'}
+Title: ${title || "N/A"}
+Budget: $${budget || "N/A"}
+Format: ${format || "N/A"}
+Tier: ${tier || "N/A"}
+Audience: ${targetAudience || "N/A"}
+Requirements: ${baseRequirements || "N/A"}
+Allow Multiple Creators: ${allowFraction ? "Yes" : "No"}
 
 Instructions:
-Generate a structured, professional campaign brief based on the provided details. Be creative and make the requirements sound appealing to creators, but do not invent restrictive constraints not implied by the prompt.`;
+Create a short, simple brief. Use basic words. Do not add extra rules.`;
 
     const result = await generateObject({
       model: openai("gpt-4o-mini"),
       system: systemPrompt,
       schema: z.object({
-        refinedTitle: z.string().describe("A catchy, polished version of the original campaign title."),
-        description: z.string().describe("A compelling campaign overview and hook (2-3 sentences)."),
-        targetAudience: z.string().describe("A polished description of the target demographic and psychographics."),
-        requirements: z.string().describe("A detailed, professional list of deliverables, specific requirements, and brand guidelines."),
+        refinedTitle: z.string().describe("A short, clear campaign title."),
+        description: z.string().describe("A short campaign summary (2-3 sentences)."),
+        targetAudience: z.string().describe("Who the campaign is for."),
+        requirements: z.string().describe("A simple list of what the creator must do."),
       }),
       prompt: "Generate the structured brief.",
       temperature: 0.7,

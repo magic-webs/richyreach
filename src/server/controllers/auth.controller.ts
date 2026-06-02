@@ -4,6 +4,7 @@ import { getDb } from "../db";
 import * as schema from "../db/schema";
 import { requestOtpSchema, verifyOtpSchema } from "../validators/auth";
 import { sendSuccess, sendError } from "../utils/response";
+import { sendOtpEmail } from "../utils/email";
 import { WhatsAppService } from "../services/whatsapp.service";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 
@@ -60,31 +61,15 @@ export class AuthController {
 
         if (apiKey) {
           try {
-            const resendResponse = await fetch("https://api.resend.com/emails", {
-              method: "POST",
-              headers: {
-                "Authorization": `Bearer ${apiKey}`,
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                from: fromEmail,
-                to: [identifier],
-                subject: "Verify your Richy Reach Account",
-                html: `
-                  <div style="font-family: sans-serif; padding: 24px; max-width: 480px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px;">
-                    <h2 style="color: #3F030B; margin-bottom: 16px; font-weight: 800;">Richy Reach Platform Verification</h2>
-                    <p>Use the following one-time verification code to secure your login:</p>
-                    <div style="font-size: 32px; font-weight: bold; letter-spacing: 4px; padding: 16px 24px; background-color: #f3f4f6; text-align: center; border-radius: 12px; margin: 24px 0; color: #1e1b4b; font-family: monospace;">
-                      ${code}
-                    </div>
-                    <p style="color: #64748b; font-size: 12px; line-height: 1.5;">This verification code is active for 10 minutes. If you did not initiate this request, you can disregard this email safely.</p>
-                  </div>
-                `
-              })
+            const { error } = await sendOtpEmail({ 
+              to: identifier, 
+              code, 
+              apiKey, 
+              fromEmail 
             });
-            if (!resendResponse.ok) {
-              const errBody = await resendResponse.text();
-              console.error("[RESEND ERROR]", errBody);
+            
+            if (error) {
+              console.error("[RESEND ERROR]", error);
             }
           } catch (err) {
             console.error("[RESEND EXCEPTION]", err);

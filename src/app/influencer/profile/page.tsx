@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../layout-shell";
 import { api } from "@/lib/api-client";
 import { GlassButton } from "@/components/ui/glass-button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 
 import { OverviewTab } from "./_components/overview-tab";
@@ -190,14 +191,7 @@ export default function InfluencerProfilePage() {
     );
   }
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="relative flex h-12 w-12 items-center justify-center">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/75 opacity-75" />
-        <span className="relative inline-flex rounded-full h-7 w-7 bg-primary" />
-      </div>
-    </div>
-  );
+  // Removed full-page loading spinner
 
   const tabs = [
     { id: "overview", label: "Overview" },
@@ -209,10 +203,10 @@ export default function InfluencerProfilePage() {
   ] as const;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-10 px-4 sm:px-6 md:px-8 pt-4 sm:pt-6">
+    <div className="max-w-6xl mx-auto space-y-6 pb-10 px-4 sm:px-2 md:px-2 pt-4 sm:pt-6">
 
       {/* ── Hero Header ── */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-xl bg-gradient-to-br from-slate-50/90 via-white/80 to-slate-100/60 dark:from-slate-900/80 dark:via-slate-900/60 dark:to-[#3F030B]/15 shadow-xl shadow-slate-200/50 dark:shadow-none p-5 sm:p-6 md:p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-xl bg-gradient-to-br from-slate-50/90 via-white/80 to-slate-100/60 dark:from-slate-900/80 dark:via-slate-900/60 dark:to-[#3F030B]/15 shadow-xl shadow-slate-200/50 dark:shadow-none p-2 sm:p-2 md:p-4">
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none" />
         <div className="absolute -bottom-10 left-10 w-48 h-48 bg-violet-500/5 rounded-full blur-[60px] pointer-events-none" />
 
@@ -247,35 +241,44 @@ export default function InfluencerProfilePage() {
         ))}
       </div>
 
-      {activeTab === "overview" && (
-        <OverviewTab accounts={accounts} accountsLoading={accountsLoading} fetchAccounts={fetchAccounts} />
-      )}
-      {activeTab === "analytics" && (
-        <AnalyticsTab profile={profile} />
-      )}
-      {activeTab === "audience" && (
-        <AudienceTab profile={profile} />
-      )}
-      {activeTab === "portfolio" && (
-        <PortfolioTab profile={profile} />
-      )}
-      {activeTab === "services" && (
-        <ServicesTab />
-      )}
-      {activeTab === "settings" && (
-        <SettingsTab
-          instagramHandle={instagramHandle} setInstagramHandle={setInstagramHandle}
-          niche={niche} setNiche={setNiche}
-          pricingUsd={pricingUsd} setPricingUsd={setPricingUsd}
-          skillsText={skillsText} setSkillsText={setSkillsText}
-          country={country} setCountry={setCountry}
-          twitter={twitter} setTwitter={setTwitter}
-          tiktok={tiktok} setTiktok={setTiktok}
-          youtube={youtube} setYoutube={setYoutube}
-          saving={saving}
-          saveError={saveError}
-          handleSubmit={handleSubmit}
-        />
+      {loading ? (
+        <div className="space-y-6">
+          <Skeleton className="h-[300px] w-full rounded-3xl" />
+          <Skeleton className="h-[400px] w-full rounded-3xl" />
+        </div>
+      ) : (
+        <>
+          {activeTab === "overview" && (
+            <OverviewTab accounts={accounts} accountsLoading={accountsLoading} fetchAccounts={fetchAccounts} />
+          )}
+          {activeTab === "analytics" && (
+            <AnalyticsTab profile={profile} />
+          )}
+          {activeTab === "audience" && (
+            <AudienceTab profile={profile} />
+          )}
+          {activeTab === "portfolio" && (
+            <PortfolioTab profile={profile} />
+          )}
+          {activeTab === "services" && (
+            <ServicesTab />
+          )}
+          {activeTab === "settings" && (
+            <SettingsTab
+              instagramHandle={instagramHandle} setInstagramHandle={setInstagramHandle}
+              niche={niche} setNiche={setNiche}
+              pricingUsd={pricingUsd} setPricingUsd={setPricingUsd}
+              skillsText={skillsText} setSkillsText={setSkillsText}
+              country={country} setCountry={setCountry}
+              twitter={twitter} setTwitter={setTwitter}
+              tiktok={tiktok} setTiktok={setTiktok}
+              youtube={youtube} setYoutube={setYoutube}
+              saving={saving}
+              saveError={saveError}
+              handleSubmit={handleSubmit}
+            />
+          )}
+        </>
       )}
 
     </div>
