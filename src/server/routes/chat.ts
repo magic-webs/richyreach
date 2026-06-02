@@ -7,6 +7,7 @@ const chatRouter = new Hono<HonoEnv>()
   .use("*", requireAuth())
   .get("/rooms", ChatController.getRooms)
   .post("/room", ChatController.createRoom)
+  .post("/admin/room", ChatController.createAdminRoom)
   .get("/messages/:roomId", ChatController.getMessages)
   .post("/message/:roomId", ChatController.sendMessage);
 

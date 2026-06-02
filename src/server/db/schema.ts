@@ -311,6 +311,20 @@ export const earnings = sqliteTable("earnings", {
 // 5. Chat Tables
 // ==========================================
 
+export const adminChats = sqliteTable("admin_chats", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }), // Brand or Influencer userId
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+export const adminMessages = sqliteTable("admin_messages", {
+  id: text("id").primaryKey(),
+  chatId: text("chat_id").notNull().references(() => adminChats.id, { onDelete: "cascade" }),
+  senderId: text("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }), // Admin or User
+  content: text("content").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
 export const chatRooms = sqliteTable("chat_rooms", {
   id: text("id").primaryKey(),
   brandId: text("brand_id").notNull().references(() => brandProfiles.userId, { onDelete: "cascade" }),
@@ -496,6 +510,25 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   }),
   sender: one(users, {
     fields: [messages.senderId],
+    references: [users.id],
+  }),
+}));
+
+export const adminChatsRelations = relations(adminChats, ({ one, many }) => ({
+  user: one(users, {
+    fields: [adminChats.userId],
+    references: [users.id],
+  }),
+  messages: many(adminMessages),
+}));
+
+export const adminMessagesRelations = relations(adminMessages, ({ one }) => ({
+  chat: one(adminChats, {
+    fields: [adminMessages.chatId],
+    references: [adminChats.id],
+  }),
+  sender: one(users, {
+    fields: [adminMessages.senderId],
     references: [users.id],
   }),
 }));

@@ -36,6 +36,23 @@ export class ChatController {
     }
   }
 
+  static async createAdminRoom(c: Context<HonoEnv>) {
+    try {
+      const user = c.get("user");
+      if (!user || user.role !== "admin") return sendError(c, "Unauthorized", 401);
+
+      const body = await c.req.json();
+      if (!body.userId) {
+        return sendError(c, "userId is required", 400);
+      }
+
+      const room = await ChatService.createAdminRoom(c.env, body.userId);
+      return sendSuccess(c, room, "Admin chat room created successfully", 201);
+    } catch (error: any) {
+      return sendError(c, error.message || "Failed to create admin chat room", 500);
+    }
+  }
+
   static async getMessages(c: Context<HonoEnv>) {
     try {
       const roomId = c.req.param("roomId") || "";

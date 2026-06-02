@@ -5,8 +5,9 @@ import { useAuth } from "../../layout-shell";
 import { api } from "@/lib/api-client";
 import { Input } from "@/components/ui/input";
 import { GlassButton } from "@/components/ui/glass-button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-export default function ChatPage() {
+export default function AdminChatPage() {
   const { user } = useAuth();
   const [rooms, setRooms] = useState<any[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
@@ -17,10 +18,14 @@ export default function ChatPage() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
 
+  const [isNewChatOpen, setIsNewChatOpen] = useState(false);
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
-  // Auto scroll to bottom of chat
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -29,22 +34,18 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages]);
 
-  const fetchRooms = async (autoSelect = false) => {
+  const fetchRooms = async () => {
     try {
-      if (rooms.length === 0) setLoadingRooms(true);
+      setLoadingRooms(true);
       const res = await api.api.chat.rooms.$get();
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
           setRooms(result.data);
-          // If we want to autoselect the first room
-          if (autoSelect && result.data.length > 0 && !selectedRoom) {
-            handleRoomSelect(result.data[0]);
-          }
         }
       }
     } catch (err) {
-      console.error("Failed to fetch chat rooms", err);
+      console.error("Failed to fetch admin chat rooms", err);
     } finally {
       setLoadingRooms(false);
     }
@@ -53,7 +54,7 @@ export default function ChatPage() {
   const fetchMessages = async (roomId: string, quiet = false) => {
     try {
       if (!quiet) setLoadingMessages(true);
-      const res = await api.api.chat.messages[":roomId"].$get({
+      const res = await (api.api.chat.messages[":roomId"].$get as any)({
         param: { roomId },
       });
       if (res.ok) {
@@ -69,15 +70,34 @@ export default function ChatPage() {
     }
   };
 
-  const handleRoomSelect = (room: any) => {
-    setSelectedRoom(room);
-    fetchMessages(room.roomId);
+  const fetchUsersList = async () => {
+    try {
+      setLoadingUsers(true);
+      const res = await (api.api.admin as any).users.$get(); // Use any just in case types aren't fully generated yet
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.data) {
+          setUsersList(result.data.filter((u: any) => u.role !== "admin"));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch users", err);
+    } finally {
+      setLoadingUsers(false);
+    }
   };
 
-  // Initial load
   useEffect(() => {
-    fetchRooms(true);
-  }, [user.role, user.id]);
+    if (user?.role === "admin") {
+      fetchRooms();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (isNewChatOpen && usersList.length === 0) {
+      fetchUsersList();
+    }
+  }, [isNewChatOpen]);
 
   // WebSocket connection for real-time messaging
   useEffect(() => {
@@ -121,6 +141,30 @@ export default function ChatPage() {
     };
   }, [selectedRoom?.roomId]);
 
+  const handleRoomSelect = (room: any) => {
+    setSelectedRoom(room);
+    fetchMessages(room.roomId);
+  };
+
+  const handleStartNewChat = async (targetUserId: string) => {
+    try {
+      setIsNewChatOpen(false);
+      const res = await (api.api.chat.admin.room.$post as any)({
+        json: { userId: targetUserId }
+      });
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.data) {
+          await fetchRooms();
+          // The returned room has the admin_ prefix included in ChatService.createAdminRoom response
+          handleRoomSelect(result.data);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to start new chat", err);
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedRoom) return;
@@ -130,7 +174,6 @@ export default function ChatPage() {
       wsRef.current.send(JSON.stringify({ content: newMessage.trim(), senderId: user.id }));
       setNewMessage("");
     } else {
-      // Fallback to REST API if WS fails
       try {
         setSending(true);
         const res = await (api.api.chat.message[":roomId"].$post as any)({
@@ -153,13 +196,32 @@ export default function ChatPage() {
     }
   };
 
+
+  if (user?.role !== "admin") return null;
+
+  const filteredUsers = usersList.filter(u => 
+    u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    u.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="max-w-6xl mx-auto h-[calc(100vh-12rem)] flex gap-6 animate-fade-in relative">
       {/* Channels Sidebar List (Left pane) */}
       <div className={`w-full md:w-80 ${selectedRoom ? "hidden md:flex" : "flex"} bg-white/80 dark:bg-slate-900/35 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl shadow-xl shadow-slate-100/40 dark:shadow-none backdrop-blur-md flex-col overflow-hidden shrink-0`}>
-        <div className="p-5 border-b border-slate-150 dark:border-slate-800/60">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">Inbox Channels</h2>
-          <p className="text-[10px] text-slate-500 font-semibold uppercase mt-1">Direct Brand-Creator Deals</p>
+        <div className="p-5 border-b border-slate-150 dark:border-slate-800/60 flex justify-between items-center">
+          <div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">Support Channels</h2>
+            <p className="text-[10px] text-slate-500 font-semibold uppercase mt-1">Direct User Messages</p>
+          </div>
+          <button 
+            onClick={() => setIsNewChatOpen(true)}
+            className="p-2 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-colors cursor-pointer"
+            title="Start New Chat"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -172,18 +234,12 @@ export default function ChatPage() {
             </div>
           ) : rooms.length === 0 ? (
             <div className="text-center py-10 text-xs text-slate-500">
-              No chat rooms open yet. Launch campaigns or view marketplace to invite creators to negotiate.
+              No support chats yet. Click the + button to message a user.
             </div>
           ) : (
             rooms.map((room) => {
               const isSelected = selectedRoom?.roomId === room.roomId;
-              // Extract details based on active role
-              const avatar = user.role === "influencer"
-                ? (room.logo || `https://api.dicebear.com/7.x/initials/svg?seed=${room.companyName}`)
-                : (room.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${room.name}`);
-              const title = user.role === "influencer" ? room.companyName : room.name;
-              const subtitle = user.role === "influencer" ? "Brand Partner" : `@${room.instagramHandle}`;
-
+              
               return (
                 <div
                   key={room.roomId}
@@ -194,13 +250,13 @@ export default function ChatPage() {
                     }`}
                 >
                   <img
-                    src={avatar}
-                    alt={title}
+                    src={room.avatar}
+                    alt={room.name}
                     className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0.5 object-contain"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className={`text-xs font-bold truncate ${isSelected ? "text-primary dark:text-white" : "text-slate-800 dark:text-slate-200"}`}>{title}</p>
-                    <p className="text-[10px] text-slate-500 truncate mt-0.5">{subtitle}</p>
+                    <p className={`text-xs font-bold truncate ${isSelected ? "text-primary dark:text-white" : "text-slate-800 dark:text-slate-200"}`}>{room.name}</p>
+                    <p className="text-[10px] text-slate-500 truncate mt-0.5 capitalize">{room.role}</p>
                   </div>
                 </div>
               );
@@ -220,9 +276,9 @@ export default function ChatPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
-            <h3 className="text-base font-bold text-slate-800 dark:text-slate-300">Negotiation Console</h3>
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-300">Support Console</h3>
             <p className="text-xs text-slate-600 dark:text-slate-500 max-w-sm mt-1">
-              Select a conversation channel from the inbox to agree on content format deliverables and escrow payments.
+              Select a conversation channel from the inbox to chat with users. They will see your messages as "RichyReach Team".
             </p>
           </div>
         ) : (
@@ -238,20 +294,16 @@ export default function ChatPage() {
                 </svg>
               </button>
               <img
-                src={
-                  user.role === "influencer"
-                    ? (selectedRoom.logo || `https://api.dicebear.com/7.x/initials/svg?seed=${selectedRoom.companyName}`)
-                    : (selectedRoom.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${selectedRoom.name}`)
-                }
+                src={selectedRoom.avatar}
                 alt="Selected Chat Avatar"
                 className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0.5 object-contain"
               />
               <div>
                 <h3 className="text-xs font-bold text-slate-900 dark:text-white">
-                  {user.role === "influencer" ? selectedRoom.companyName : selectedRoom.name}
+                  {selectedRoom.name}
                 </h3>
                 <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
-                  {user.role === "influencer" ? "Corporate Partner" : `@${selectedRoom.instagramHandle}`}
+                  {selectedRoom.role}
                 </p>
               </div>
             </div>
@@ -266,12 +318,11 @@ export default function ChatPage() {
                 </div>
               ) : messages.length === 0 ? (
                 <div className="text-center py-20 text-xs text-slate-500">
-                  No messages yet. Send a message to start negotiating your campaign terms!
+                  No messages yet. Send a message to assist this user!
                 </div>
               ) : (
                 messages.map((msg) => {
-                  // Determine sender alignment. The mock auth check can match either real or mock tokens
-                  const isMe = msg.senderId === user.id || msg.senderId.startsWith(`mock_${user.role}`);
+                  const isMe = msg.senderId === user.id || msg.senderId.startsWith(`mock_${user.role}`) || msg.senderName === user.name;
 
                   return (
                     <div
@@ -312,7 +363,7 @@ export default function ChatPage() {
             >
               <Input
                 type="text"
-                placeholder="Enter campaign details, contract links, or message..."
+                placeholder="Type a message to the user..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 disabled={sending}
@@ -332,6 +383,45 @@ export default function ChatPage() {
           </>
         )}
       </div>
+
+      <Dialog open={isNewChatOpen} onOpenChange={setIsNewChatOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Start New Support Chat</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-4">
+            <Input 
+              placeholder="Search user by name or email..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <div className="max-h-64 overflow-y-auto space-y-2 border rounded-xl p-2 bg-slate-50/50 dark:bg-slate-950/20">
+              {loadingUsers ? (
+                <p className="text-xs text-center text-slate-500 py-4">Loading users...</p>
+              ) : filteredUsers.length === 0 ? (
+                <p className="text-xs text-center text-slate-500 py-4">No users found.</p>
+              ) : (
+                filteredUsers.map((u) => (
+                  <div 
+                    key={u.id}
+                    className="flex items-center justify-between p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-all"
+                    onClick={() => handleStartNewChat(u.id)}
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <img src={u.image || `https://api.dicebear.com/7.x/initials/svg?seed=${u.name}`} alt={u.name} className="w-8 h-8 rounded-lg bg-white" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{u.name}</p>
+                        <p className="text-[10px] text-slate-500 truncate">{u.email}</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-primary/10 text-primary rounded">{u.role}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

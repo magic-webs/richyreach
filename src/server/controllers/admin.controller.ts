@@ -64,6 +64,18 @@ export class AdminController {
         .leftJoin(schema.users, eq(schema.influencerAccounts.userId, schema.users.id))
         .where(eq(schema.influencerAccounts.status, status))
         .all();
+        
+      // Fetch services for these influencers
+      const userIds = influencerAccounts.map(a => a.user?.id).filter(Boolean) as string[];
+      const services = userIds.length > 0 
+        ? await db.select().from(schema.creatorServices).where(or(...userIds.map(id => eq(schema.creatorServices.influencerId, id)))).all()
+        : [];
+        
+      const servicesByUserId = services.reduce((acc, s) => {
+        if (!acc[s.influencerId]) acc[s.influencerId] = [];
+        acc[s.influencerId].push(s);
+        return acc;
+      }, {} as Record<string, any[]>);
 
       const brandAccounts = await db
         .select({
@@ -80,7 +92,12 @@ export class AdminController {
         .all();
 
       return sendSuccess(c, {
-        influencerAccounts: influencerAccounts.map(r => ({ ...r.account, ownerName: r.user?.name, ownerEmail: r.user?.email })),
+        influencerAccounts: influencerAccounts.map(r => ({ 
+          ...r.account, 
+          ownerName: r.user?.name, 
+          ownerEmail: r.user?.email,
+          services: r.user?.id ? servicesByUserId[r.user.id] || [] : []
+        })),
         brandAccounts: brandAccounts.map(r => ({ ...r.account, ownerName: r.user?.name, ownerEmail: r.user?.email })),
         counts: {
           influencer: influencerAccounts.length,
@@ -90,6 +107,69 @@ export class AdminController {
       }, `${status} profiles retrieved`);
     } catch (error: any) {
       return sendError(c, error.message || "Failed to fetch pending profiles", 500);
+    }
+  }
+
+  // GET /admin/profile/:type/:id — Returns a specific profile
+  static async getProfile(c: Context<HonoEnv>) {
+    try {
+      const db = getDb(c.env);
+      const type = c.req.param("type");
+      const id = c.req.param("id");
+
+      if (type === "influencer") {
+        const account = await db
+          .select({
+            account: schema.influencerAccounts,
+            user: {
+              name: schema.users.name,
+              email: schema.users.email,
+            },
+          })
+          .from(schema.influencerAccounts)
+          .leftJoin(schema.users, eq(schema.influencerAccounts.userId, schema.users.id))
+          .where(eq(schema.influencerAccounts.id, id))
+          .get();
+
+        if (!account) return sendError(c, "Account not found", 404);
+
+        // Fetch services
+        const services = account.account.userId
+          ? await db.select().from(schema.creatorServices).where(eq(schema.creatorServices.influencerId, account.account.userId)).all()
+          : [];
+
+        return sendSuccess(c, {
+          ...account.account,
+          ownerName: account.user?.name,
+          ownerEmail: account.user?.email,
+          services,
+        }, "Profile retrieved");
+      } else if (type === "brand") {
+        const account = await db
+          .select({
+            account: schema.brandAccounts,
+            user: {
+              name: schema.users.name,
+              email: schema.users.email,
+            },
+          })
+          .from(schema.brandAccounts)
+          .leftJoin(schema.users, eq(schema.brandAccounts.userId, schema.users.id))
+          .where(eq(schema.brandAccounts.id, id))
+          .get();
+
+        if (!account) return sendError(c, "Account not found", 404);
+
+        return sendSuccess(c, {
+          ...account.account,
+          ownerName: account.user?.name,
+          ownerEmail: account.user?.email,
+        }, "Profile retrieved");
+      } else {
+        return sendError(c, "Invalid account type", 400);
+      }
+    } catch (error: any) {
+      return sendError(c, error.message || "Failed to fetch profile", 500);
     }
   }
 
@@ -161,6 +241,62 @@ export class AdminController {
       return sendSuccess(c, { accountId, accountType, newStatus }, `Profile ${action === "approve" ? "approved" : "rejected"} successfully`);
     } catch (error: any) {
       return sendError(c, error.message || "Failed to verify profile", 500);
+    }
+  }
+
+  // POST /admin/update-profile — Update an account profile
+  static async updateProfile(c: Context<HonoEnv>) {
+    try {
+      const admin = c.get("user");
+      if (!admin) return sendError(c, "Unauthorized", 401);
+
+      const body = await c.req.json();
+      const { accountId, accountType, updates } = body;
+
+      if (!accountId || !accountType || !updates) {
+        return sendError(c, "accountId, accountType, and updates are required", 400);
+      }
+
+      const db = getDb(c.env);
+
+      if (accountType === "influencer") {
+        await db
+          .update(schema.influencerAccounts)
+          .set({ 
+            instagramHandle: updates.instagramHandle,
+            followers: updates.followers,
+            engagementRate: updates.engagementRate,
+            avgViews: updates.avgViews,
+            avgLikes: updates.avgLikes,
+            niche: updates.niche,
+            pricing: updates.pricing,
+            level: updates.level,
+            country: updates.country,
+            bio: updates.bio,
+            updatedAt: new Date() 
+          })
+          .where(eq(schema.influencerAccounts.id, accountId));
+      } else if (accountType === "brand") {
+        await db
+          .update(schema.brandAccounts)
+          .set({ 
+            companyName: updates.companyName,
+            website: updates.website,
+            category: updates.category,
+            description: updates.description,
+            instagramPage: updates.instagramPage,
+            brandSize: updates.brandSize,
+            budgetRange: updates.budgetRange,
+            updatedAt: new Date() 
+          })
+          .where(eq(schema.brandAccounts.id, accountId));
+      } else {
+        return sendError(c, "Invalid accountType", 400);
+      }
+
+      return sendSuccess(c, { accountId, accountType }, "Profile updated successfully");
+    } catch (error: any) {
+      return sendError(c, error.message || "Failed to update profile", 500);
     }
   }
 }

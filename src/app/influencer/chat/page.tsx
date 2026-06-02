@@ -83,8 +83,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (!selectedRoom) return;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/chat/ws?roomId=${selectedRoom.roomId}`; // Adjust if your backend has a different WS path
+    const wsUrl = `ws://localhost:4000?roomId=${selectedRoom.roomId}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -128,7 +127,7 @@ export default function ChatPage() {
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       // Send via true WebSocket
-      wsRef.current.send(JSON.stringify({ content: newMessage.trim() }));
+      wsRef.current.send(JSON.stringify({ content: newMessage.trim(), senderId: user.id }));
       setNewMessage("");
     } else {
       // Fallback to REST API if WS fails
