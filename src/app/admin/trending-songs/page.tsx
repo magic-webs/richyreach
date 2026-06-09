@@ -4,7 +4,19 @@ import React, { useState } from "react";
 import { useAuth } from "../../layout-shell";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Trash2, Plus, Music, Search, Loader2, Sparkles, Image as ImageIcon, ExternalLink } from "lucide-react";
+import {
+  Trash2,
+  Plus,
+  Music,
+  Search,
+  Loader2,
+  Sparkles,
+  Image as ImageIcon,
+  ExternalLink,
+  Pencil,
+  X,
+  Check,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface TrendingSong {
@@ -33,7 +45,7 @@ export default function AdminTrendingSongsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // States
+  // ── Add form state ──────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [title, setTitle] = useState("");
@@ -42,24 +54,34 @@ export default function AdminTrendingSongsPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState("");
 
-  // Fetch trending songs
-  const { data: trendingSongs = [], isLoading, error } = useQuery<TrendingSong[]>({
+  // ── Edit modal state ────────────────────────────────────────────────
+  const [editTarget, setEditTarget] = useState<TrendingSong | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editArtist, setEditArtist] = useState("");
+  const [editInstagramAudioUrl, setEditInstagramAudioUrl] = useState("");
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImageUrl, setEditImageUrl] = useState("");
+
+  // ── Fetch ───────────────────────────────────────────────────────────
+  const {
+    data: trendingSongs = [],
+    isLoading,
+    error,
+  } = useQuery<TrendingSong[]>({
     queryKey: ["adminTrendingSongs"],
     queryFn: async () => {
       const res = await fetch(`${BACKEND_API_URL}/admin/trending-songs`, {
         headers: getAuthHeaders(),
         credentials: "include",
       });
-      if (!res.ok) {
-        throw new Error("Failed to fetch trending songs");
-      }
-      const json = await res.json() as any;
+      if (!res.ok) throw new Error("Failed to fetch trending songs");
+      const json = (await res.json()) as any;
       return json.success ? json.data : [];
     },
     enabled: user.role === "admin",
   });
 
-  // Add trending song mutation
+  // ── Add mutation ────────────────────────────────────────────────────
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const res = await fetch(`${BACKEND_API_URL}/admin/trending-songs`, {
@@ -77,7 +99,6 @@ export default function AdminTrendingSongsPage() {
     onSuccess: () => {
       toast.success("Trending song added successfully");
       queryClient.invalidateQueries({ queryKey: ["adminTrendingSongs"] });
-      // Reset form fields
       setTitle("");
       setArtist("");
       setInstagramAudioUrl("");
@@ -90,7 +111,38 @@ export default function AdminTrendingSongsPage() {
     },
   });
 
-  // Delete trending song mutation
+  // ── Edit mutation ───────────────────────────────────────────────────
+  const editMutation = useMutation({
+    mutationFn: async ({
+      id,
+      formData,
+    }: {
+      id: string;
+      formData: FormData;
+    }) => {
+      const res = await fetch(`${BACKEND_API_URL}/admin/trending-songs/${id}`, {
+        method: "PUT",
+        body: formData,
+        headers: getAuthHeaders(),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const errorJson = await res.json().catch(() => ({}));
+        throw new Error((errorJson as any).error || "Failed to update song");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Trending song updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["adminTrendingSongs"] });
+      closeEditModal();
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to update song");
+    },
+  });
+
+  // ── Delete mutation ─────────────────────────────────────────────────
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`${BACKEND_API_URL}/admin/trending-songs/${id}`, {
@@ -122,7 +174,25 @@ export default function AdminTrendingSongsPage() {
     );
   }
 
-  // Form submit handler
+  // ── Helpers ─────────────────────────────────────────────────────────
+  const openEditModal = (song: TrendingSong) => {
+    setEditTarget(song);
+    setEditTitle(song.title);
+    setEditArtist(song.artist);
+    setEditInstagramAudioUrl(song.instagramAudioUrl);
+    setEditImageFile(null);
+    setEditImageUrl("");
+  };
+
+  const closeEditModal = () => {
+    setEditTarget(null);
+    setEditTitle("");
+    setEditArtist("");
+    setEditInstagramAudioUrl("");
+    setEditImageFile(null);
+    setEditImageUrl("");
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !artist.trim() || !instagramAudioUrl.trim()) {
@@ -133,22 +203,47 @@ export default function AdminTrendingSongsPage() {
       toast.error("Please upload a cover image or provide a cover image URL");
       return;
     }
-
     const formData = new FormData();
     formData.append("title", title.trim());
     formData.append("artist", artist.trim());
     formData.append("instagramAudioUrl", instagramAudioUrl.trim());
-    if (imageFile) {
-      formData.append("image", imageFile);
-    }
-    if (imageUrlInput.trim()) {
-      formData.append("imageUrl", imageUrlInput.trim());
-    }
-
+    if (imageFile) formData.append("image", imageFile);
+    if (imageUrlInput.trim()) formData.append("imageUrl", imageUrlInput.trim());
     uploadMutation.mutate(formData);
   };
 
-  // Filtered songs
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTarget) return;
+
+    const noChange =
+      editTitle.trim() === editTarget.title &&
+      editArtist.trim() === editTarget.artist &&
+      editInstagramAudioUrl.trim() === editTarget.instagramAudioUrl &&
+      !editImageFile &&
+      !editImageUrl.trim();
+
+    if (noChange) {
+      toast.error("No changes detected. Please modify at least one field.");
+      return;
+    }
+
+    const formData = new FormData();
+    if (editTitle.trim() && editTitle.trim() !== editTarget.title)
+      formData.append("title", editTitle.trim());
+    if (editArtist.trim() && editArtist.trim() !== editTarget.artist)
+      formData.append("artist", editArtist.trim());
+    if (
+      editInstagramAudioUrl.trim() &&
+      editInstagramAudioUrl.trim() !== editTarget.instagramAudioUrl
+    )
+      formData.append("instagramAudioUrl", editInstagramAudioUrl.trim());
+    if (editImageFile) formData.append("image", editImageFile);
+    if (editImageUrl.trim()) formData.append("imageUrl", editImageUrl.trim());
+
+    editMutation.mutate({ id: editTarget.id, formData });
+  };
+
   const filteredSongs = trendingSongs.filter(
     (song) =>
       song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -157,7 +252,7 @@ export default function AdminTrendingSongsPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-10 px-4 md:px-0">
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-sm font-medium text-primary">Admin Section</h1>
@@ -173,18 +268,26 @@ export default function AdminTrendingSongsPage() {
           onClick={() => setShowAddForm(!showAddForm)}
           className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#3F030B] to-[#7E1523] hover:from-[#4E040E] hover:to-[#921B2B] text-white font-bold text-sm rounded-xl shadow-md transition-all active:scale-[0.98]"
         >
-          {showAddForm ? "Cancel" : <><Plus className="w-4 h-4" /> Add Song</>}
+          {showAddForm ? (
+            "Cancel"
+          ) : (
+            <>
+              <Plus className="w-4 h-4" /> Add Song
+            </>
+          )}
         </button>
       </div>
 
-      {/* Add Song Collapsible Form */}
+      {/* ── Add Song Form ── */}
       {showAddForm && (
         <div className="bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 shadow-xl max-w-xl animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex items-center gap-2 mb-4">
             <div className="p-2 rounded-lg bg-primary/10 text-primary">
               <Sparkles className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-lg text-slate-900 dark:text-white">Publish Trending Song</h3>
+            <h3 className="font-bold text-lg text-slate-900 dark:text-white">
+              Publish Trending Song
+            </h3>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -283,7 +386,8 @@ export default function AdminTrendingSongsPage() {
             >
               {uploadMutation.isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Uploading Cover Art...
+                  <Loader2 className="w-4 h-4 animate-spin" /> Uploading Cover
+                  Art...
                 </>
               ) : (
                 "Save Trending Track"
@@ -293,7 +397,7 @@ export default function AdminTrendingSongsPage() {
         </div>
       )}
 
-      {/* Search Bar */}
+      {/* ── Search Bar ── */}
       <div className="relative max-w-md bg-white dark:bg-slate-900/30 rounded-2xl border border-slate-200 dark:border-slate-800/60 p-1 flex items-center">
         <Search className="w-5 h-5 ml-3 text-slate-450 dark:text-slate-500" />
         <input
@@ -305,7 +409,7 @@ export default function AdminTrendingSongsPage() {
         />
       </div>
 
-      {/* Loading list state */}
+      {/* ── Loading / Error / Empty ── */}
       {isLoading ? (
         <div className="space-y-4">
           <Skeleton className="h-16 rounded-2xl" />
@@ -315,18 +419,24 @@ export default function AdminTrendingSongsPage() {
         </div>
       ) : error ? (
         <div className="text-center py-12 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-3xl">
-          <p className="text-slate-500 text-sm">Failed to load trending songs. Please try again later.</p>
+          <p className="text-slate-500 text-sm">
+            Failed to load trending songs. Please try again later.
+          </p>
         </div>
       ) : filteredSongs.length === 0 ? (
         <div className="text-center py-16 bg-white/40 dark:bg-slate-900/20 border border-slate-200/80 dark:border-slate-800/50 rounded-3xl flex flex-col items-center justify-center space-y-3">
           <Music className="w-10 h-10 text-slate-400" />
           <div className="space-y-1">
-            <h4 className="font-bold text-slate-900 dark:text-white text-base">No trending tracks</h4>
-            <p className="text-xs text-slate-500">Publish viral audio links for campaigns.</p>
+            <h4 className="font-bold text-slate-900 dark:text-white text-base">
+              No trending tracks
+            </h4>
+            <p className="text-xs text-slate-500">
+              Publish viral audio links for campaigns.
+            </p>
           </div>
         </div>
       ) : (
-        /* Audio List */
+        /* ── Audio List ── */
         <div className="bg-white dark:bg-slate-900/20 border border-slate-200 dark:border-slate-800/60 rounded-3xl overflow-hidden shadow-sm dark:shadow-none divide-y divide-slate-200 dark:divide-slate-800/60">
           {filteredSongs.map((song) => (
             <div
@@ -334,7 +444,7 @@ export default function AdminTrendingSongsPage() {
               className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-colors"
             >
               <div className="flex items-center gap-4 min-w-0">
-                {/* Cover art image preview */}
+                {/* Cover art */}
                 <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-950 shrink-0 border border-slate-200/40 dark:border-slate-800/40 relative group">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -357,8 +467,8 @@ export default function AdminTrendingSongsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                {/* External Instagram Audio URL Link */}
+              <div className="flex items-center gap-2">
+                {/* Instagram Audio link */}
                 <a
                   href={song.instagramAudioUrl}
                   target="_blank"
@@ -368,10 +478,23 @@ export default function AdminTrendingSongsPage() {
                   <ExternalLink className="w-3.5 h-3.5" /> Reels Audio
                 </a>
 
+                {/* Edit button */}
+                <button
+                  onClick={() => openEditModal(song)}
+                  className="p-2 text-blue-500 hover:bg-blue-500/10 active:scale-[0.9] transition-all rounded-xl border border-transparent hover:border-blue-500/20"
+                  title="Edit Song"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+
                 {/* Delete button */}
                 <button
                   onClick={() => {
-                    if (window.confirm(`Are you sure you want to remove "${song.title}"?`)) {
+                    if (
+                      window.confirm(
+                        `Are you sure you want to remove "${song.title}"?`
+                      )
+                    ) {
                       deleteMutation.mutate(song.id);
                     }
                   }}
@@ -379,11 +502,175 @@ export default function AdminTrendingSongsPage() {
                   className="p-2 text-rose-500 hover:bg-rose-500/10 active:scale-[0.9] transition-all rounded-xl border border-transparent hover:border-rose-500/20"
                   title="Remove track"
                 >
-                  <Trash2 className="w-4.5 h-4.5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── Edit Modal Overlay ── */}
+      {editTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-lg text-slate-900 dark:text-white">
+                  Edit Trending Song
+                </h3>
+              </div>
+              <button
+                onClick={closeEditModal}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Current cover preview */}
+            <div className="mb-4 flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-950/40 rounded-2xl border border-slate-200 dark:border-slate-800">
+              <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800 shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={editTarget.imageUrl}
+                  alt={editTarget.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="min-w-0">
+                <p className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                  {editTarget.title}
+                </p>
+                <p className="text-xs text-slate-500 truncate">
+                  {editTarget.artist}
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              {/* Title & Artist */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    Song Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    placeholder="Song title"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    Artist Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editArtist}
+                    onChange={(e) => setEditArtist(e.target.value)}
+                    placeholder="Artist name"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Instagram Audio URL */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                  Instagram Reels Audio URL
+                </label>
+                <input
+                  type="url"
+                  value={editInstagramAudioUrl}
+                  onChange={(e) => setEditInstagramAudioUrl(e.target.value)}
+                  placeholder="https://www.instagram.com/reels/audio/..."
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900 dark:text-white"
+                />
+              </div>
+
+              {/* Replace Cover Image */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    Replace Cover (File)
+                  </label>
+                  <div className="relative flex items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-500/50 rounded-xl p-4 transition-colors bg-slate-50 dark:bg-slate-950/20">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setEditImageFile(e.target.files[0]);
+                          setEditImageUrl("");
+                        }
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="text-center space-y-1.5 pointer-events-none">
+                      <ImageIcon className="w-5 h-5 mx-auto text-slate-400" />
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        {editImageFile ? editImageFile.name : "Select New Cover"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col justify-center">
+                  <div className="text-center text-xs font-bold text-slate-450 dark:text-slate-500 py-1">
+                    — OR —
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                      New Cover URL
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://example.com/new-cover.jpg"
+                      value={editImageUrl}
+                      onChange={(e) => {
+                        setEditImageUrl(e.target.value);
+                        if (e.target.value) setEditImageFile(null);
+                      }}
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editMutation.isPending}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-bold rounded-xl shadow-md transition-all disabled:opacity-50 active:scale-[0.99] text-sm"
+                >
+                  {editMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" /> Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
