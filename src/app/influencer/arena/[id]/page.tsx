@@ -37,7 +37,7 @@ export default function ArenaLeaderboardPage() {
     try {
       setLoading(true);
       // Fetch all arenas to get details for this one
-      const arenasRes = await api.api.arena.$get();
+      const arenasRes = await api("/arena");
       if (arenasRes.ok) {
         const arenasJson = await arenasRes.json() as any;
         const found = (arenasJson.data || []).find((a: any) => a.id === id);
@@ -51,7 +51,7 @@ export default function ArenaLeaderboardPage() {
       }
 
       // Fetch leaderboard
-      const lbRes = await api.api.arena[":id"].leaderboard.$get({ param: { id } });
+      const lbRes = await api(`/arena/${id}/leaderboard`);
       if (lbRes.ok) {
         const lbJson = await lbRes.json() as any;
         setLeaderboard(lbJson.data || []);
@@ -66,7 +66,7 @@ export default function ArenaLeaderboardPage() {
 
   const fetchAccounts = async () => {
     try {
-      const res = await api.api.influencers.accounts.$get();
+      const res = await api("/influencers/accounts");
       if (res.ok) {
         const json = await res.json() as any;
         setAccounts(json.data || []);
@@ -84,10 +84,11 @@ export default function ArenaLeaderboardPage() {
   const handleJoin = async () => {
     setJoining(true);
     try {
-      const res = await api.api.arena[":id"].join.$post({ 
-        param: { id },
-        json: { influencerAccountId: selectedAccountId }
-      } as any);
+      const res = await api(`/arena/${id}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ influencerAccountId: selectedAccountId })
+      });
       const json = await res.json() as any;
       if (res.ok && json.success) {
         toast.success("Successfully joined the Arena!");

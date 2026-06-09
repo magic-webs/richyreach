@@ -4,9 +4,9 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Icons from "@/components/icons";
-import { authClient } from "@/lib/auth-client";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Rocket } from "lucide-react";
+import { api } from "@/lib/api-client";
 
 export const useAuth = () => {
   const user = useAuthStore((s) => s.user);
@@ -17,7 +17,6 @@ export const useAuth = () => {
 };
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
-  const { data: session, isPending } = authClient.useSession();
   const { user } = useAuthStore();
   const notifications = useAuthStore((s) => s.notifications);
   const markNotificationsRead = useAuthStore((s) => s.markNotificationsRead);
@@ -30,6 +29,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   // Track whether we've finished our custom session bootstrap
   const [sessionChecked, setSessionChecked] = useState(false);
   const bootstrapRan = useRef(false);
+  const redirectingTo = useRef<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -37,32 +37,14 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     setIsHydrated(true);
   }, []);
 
-  // Primary: sync from Better Auth session (OAuth logins)
+  // Bootstrap from our custom OTP session cookie/token via /api/auth/session
   useEffect(() => {
-    if (session?.user) {
-      useAuthStore.getState().updateUser({
-        id: session.user.id,
-        name: session.user.name,
-        email: session.user.email,
-        role: (session.user as any).role || "influencer",
-        avatar: session.user.image || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(session.user.name)}`,
-      });
-      setSessionChecked(true);
-    }
-  }, [session]);
-
-  // Fallback: bootstrap from our custom OTP session cookie via /api/auth/session
-  // This runs once after Better Auth finishes its check and returns no session.
-  useEffect(() => {
-    if (isPending) return; // Wait for Better Auth to finish
-    if (session?.user) return; // Already handled above
     if (bootstrapRan.current) return; // Only run once
     bootstrapRan.current = true;
 
     async function fetchCustomSession() {
       try {
-        const res = await fetch("/api/auth/session", {
-          credentials: "include", // Send reelio_session cookie
+        const res = await api("/auth/session", {
           cache: "no-store",
         });
         if (res.ok) {
@@ -76,11 +58,12 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
               role: u.role || "influencer",
               avatar: u.image || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(u.name || u.id)}`,
             });
-            return;
+          } else {
+            useAuthStore.getState().logout();
           }
+        } else {
+          useAuthStore.getState().logout();
         }
-        // If no valid session was found via BetterAuth or fallback API, clear persisted user
-        useAuthStore.getState().logout();
       } catch (_) {
         // Network error — leave user as unauthenticated
         useAuthStore.getState().logout();
@@ -90,7 +73,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     }
 
     fetchCustomSession();
-  }, [isPending, session]);
+  }, []);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -125,6 +108,24 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       items.push(
         { name: "Dashboard", href: "/admin/dashboard", icon: Icons.Admin },
         { name: "Profiles", href: "/admin/profiles", icon: Icons.Profile },
+        {
+          name: "Campaign Images",
+          href: "/admin/campaign-images",
+          icon: () => (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          )
+        },
+        {
+          name: "Trending Songs",
+          href: "/admin/trending-songs",
+          icon: () => (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
+          )
+        },
         { name: "Calculators", href: "/calculators", icon: Icons.Calculator },
         { name: "Messaging", href: "/admin/chat", icon: Icons.Chat }
       );
@@ -134,11 +135,73 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
 
   const currentNavItems = getRoleNavItems();
 
+  // Redirect logic in useEffect to prevent rendering side-effects
+  useEffect(() => {
+    console.log("[LayoutShell useEffect] Run details:", {
+      isHydrated,
+      sessionChecked,
+      pathname,
+      userId: user.id,
+      userRole: user.role,
+      redirectingTo: redirectingTo.current
+    });
+
+    if (!isHydrated || !sessionChecked) return;
+
+    if (pathname === "/authentication") {
+      if (user.id !== "") {
+        const target = `/${user.role}/dashboard`;
+        if (redirectingTo.current !== target) {
+          redirectingTo.current = target;
+          console.log("[LayoutShell useEffect] Redirecting to:", target);
+          router.replace(target);
+        }
+      }
+    } else if (pathname !== "/") {
+      if (user.id === "") {
+        const target = `/authentication?redirectTo=${encodeURIComponent(pathname)}`;
+        if (redirectingTo.current !== target) {
+          redirectingTo.current = target;
+          console.log("[LayoutShell useEffect] Redirecting to login:", target);
+          router.replace(target);
+        }
+      } else {
+        const pathRole = pathname.startsWith("/brand")
+          ? "brand"
+          : pathname.startsWith("/influencer")
+            ? "influencer"
+            : pathname.startsWith("/admin")
+              ? "admin"
+              : null;
+        if (pathRole && user.role !== "admin" && pathRole !== user.role) {
+          const target = `/${user.role}/dashboard`;
+          if (redirectingTo.current !== target) {
+            redirectingTo.current = target;
+            console.log("[LayoutShell useEffect] Role mismatch. Redirecting to:", target);
+            router.replace(target);
+          }
+        }
+      }
+    }
+
+    // Reset redirectingTo when pathname reaches target
+    if (pathname === redirectingTo.current) {
+      redirectingTo.current = null;
+    }
+  }, [isHydrated, sessionChecked, pathname, user.id, user.role, router]);
+
   // Public pages: render without sidebar/nav
   if (pathname === "/authentication") {
+    console.log("[LayoutShell render] Authentication path. sessionChecked:", sessionChecked, "userId:", user.id);
     if (sessionChecked && user.id !== "") {
-      router.replace(`/${user.role}/dashboard`);
-      return null;
+      return (
+        <>
+          <div className="fixed inset-0 flex items-center justify-center bg-slate-50 dark:bg-slate-950 z-50">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+          <div style={{ display: "none" }}>{children}</div>
+        </>
+      );
     }
     return <>{children}</>;
   }
@@ -148,7 +211,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   }
 
   // Show loading spinner until hydrated. Also wait for session check if user is not yet persisted.
-  if (!isHydrated || (isPending && !sessionChecked && user.id === "")) {
+  if (!isHydrated || (!sessionChecked && user.id === "")) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -158,7 +221,6 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
 
   // Not authenticated — redirect to login page
   if (user.id === "") {
-    router.replace(`/authentication?redirectTo=${encodeURIComponent(pathname)}`);
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -167,7 +229,6 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   }
 
   // Role-based access guard on the client side (middleware handles it server-side too)
-  const roleDashboard = `/${user.role}/dashboard`;
   const pathRole = pathname.startsWith("/brand")
     ? "brand"
     : pathname.startsWith("/influencer")
@@ -177,7 +238,6 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         : null;
 
   if (pathRole && user.role !== "admin" && pathRole !== user.role) {
-    router.replace(roleDashboard);
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

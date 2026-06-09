@@ -50,14 +50,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Validate session + get user role from our API
+  // Validate session + get user role from the backend API
   try {
-    const apiBase =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      `${request.nextUrl.protocol}//${request.nextUrl.host}`;
+    // Use the real backend API URL — there is no local /api/auth/session route
+    const backendBase =
+      process.env.NEXT_PUBLIC_API_URL ||
+      "https://backend-api.richyreach.com/api";
 
-    const sessionRes = await fetch(`${apiBase}/api/auth/session`, {
+    const sessionRes = await fetch(`${backendBase}/auth/session`, {
       headers: {
+        // Backend accepts Bearer token (same as the client-side api-client)
+        Authorization: `Bearer ${sessionToken}`,
         Cookie: `reelio_session=${sessionToken}`,
       },
       cache: "no-store",

@@ -43,7 +43,7 @@ export default function CreateCampaignPage() {
     const loadBrandAccounts = async () => {
       setLoadingAccounts(true);
       try {
-        const res = await fetch("/api/brands/accounts", { credentials: "include" });
+        const res = await api("/brands/accounts");
         const json = (await res.json()) as any;
         if (json.success) {
           const verified = (json.data || []).filter((a: any) => a.status === "verified");
@@ -121,8 +121,10 @@ export default function CreateCampaignPage() {
       setSaving(true);
       const budgetCents = Math.round(parseFloat(budgetInr) * 100) || 0;
 
-      const res = await api.api.campaigns.create.$post({
-        json: {
+      const res = await api("/campaigns/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           title: aiTitle,
           description: aiDescription,
           targetAudience: aiTargetAudience || null,
@@ -134,7 +136,7 @@ export default function CreateCampaignPage() {
           allowFraction,
           isArena,
           maxReachCap: isArena ? parseInt(maxReachCap) : null,
-        },
+        }),
       });
 
       if (res.ok) {

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../layout-shell";
+import { useAuthStore } from "@/store/useAuthStore";
 import { api } from "@/lib/api-client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,16 +69,15 @@ export default function BrandProfilePage() {
   const [linkedin, setLinkedin] = useState("");
 
   const handleLogout = async () => {
-    try { await fetch("/api/auth/logout", { method: "POST" }); } catch (_) { }
-    localStorage.removeItem("reelio_session_token");
-    localStorage.removeItem("reelio_mock_user");
+    try { await api("/auth/logout", { method: "POST" }); } catch (_) { }
+    useAuthStore.getState().logout();
     router.push("/authentication");
   };
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const res = await api.api.brands.profile.$get();
+      const res = await api("/brands/profile");
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
@@ -106,7 +106,7 @@ export default function BrandProfilePage() {
 
   const fetchCampaigns = async () => {
     try {
-      const res = await api.api.campaigns.$get();
+      const res = await api("/campaigns");
       if (res.ok) {
         const r = await res.json();
         if (r.success && r.data) setCampaigns(r.data as any[]);
@@ -116,7 +116,7 @@ export default function BrandProfilePage() {
 
   const fetchSaved = async () => {
     try {
-      const res = await fetch("/api/brands/saved-influencers");
+      const res = await api("/brands/saved-influencers");
       if (res.ok) {
         const r = await res.json() as any;
         if (r.success && r.data) setSavedInfluencers(r.data as any[]);
@@ -137,7 +137,7 @@ export default function BrandProfilePage() {
   const fetchBrandAccounts = async () => {
     setBrandAccountsLoading(true);
     try {
-      const res = await fetch("/api/brands/accounts", { credentials: "include" });
+      const res = await api("/brands/accounts");
       const json = await res.json() as any;
       if (json.success) setBrandAccounts(json.data || []);
     } catch (err) {
@@ -152,9 +152,8 @@ export default function BrandProfilePage() {
     setBrandAccError(null);
     setAddingBrandAccount(true);
     try {
-      const res = await fetch("/api/brands/accounts", {
+      const res = await api("/brands/accounts", {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           companyName: newBrandName.trim(),
@@ -184,7 +183,7 @@ export default function BrandProfilePage() {
   const handleDeleteBrandAccount = async (id: string) => {
     if (!confirm("Remove this brand account?")) return;
     try {
-      const res = await fetch(`/api/brands/accounts/${id}`, { method: "DELETE", credentials: "include" });
+      const res = await api(`/brands/accounts/${id}`, { method: "DELETE" });
       const json = await res.json() as any;
       if (json.success) fetchBrandAccounts();
     } catch (err) { console.error(err); }
@@ -195,14 +194,16 @@ export default function BrandProfilePage() {
     if (!website) return;
     try {
       setSaving(true);
-      const res = await api.api.brands.profile.$post({
-        json: {
+      const res = await api("/brands/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           companyName,
           website,
           category,
           description: description || null,
           logo: logo || null,
-        },
+        }),
       });
       if (res.ok) {
         const result = await res.json();

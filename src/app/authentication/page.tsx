@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "../layout-shell";
+import { api } from "@/lib/api-client";
 
 // ──────────────────────────────────────────────────────────────
 // Icons
@@ -129,7 +130,7 @@ function AuthPageInner() {
       return;
     }
     try {
-      const res = await fetch("/api/auth/request-otp", {
+      const res = await api("/auth/request-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier: identifier.trim(), method: authMethod, mode: activeTab }),
@@ -164,7 +165,7 @@ function AuthPageInner() {
     try {
       const payload: Record<string, any> = { identifier: identifier.trim(), code };
       if (activeTab === "signup") { payload.role = role; payload.name = name.trim() || undefined; }
-      const res = await fetch("/api/auth/verify-otp", {
+      const res = await api("/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -172,7 +173,15 @@ function AuthPageInner() {
       const data = await res.json() as any;
       if (!res.ok) throw new Error(data.message || "Invalid or expired verification code.");
       toast.success("Verification successful! Authenticating session...");
-      // Cookie is set by the server — no need to store token in localStorage
+      
+      // Store token in localStorage for cross-origin API headers
+      // AND set it as a cookie so the Next.js middleware (proxy.ts) can read it
+      if (data.data?.token) {
+        localStorage.setItem("reelio_session_token", data.data.token);
+        // The middleware reads `reelio_session` cookie — keep them in sync
+        document.cookie = `reelio_session=${data.data.token}; path=/; SameSite=Lax`;
+      }
+      
       updateUser({
         id: data.data.user.id,
         name: data.data.user.name,

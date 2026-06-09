@@ -25,9 +25,7 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
   const { data: campaignDetails, isLoading, error } = useQuery({
     queryKey: ["campaignDetails", id],
     queryFn: async () => {
-      const res = await api.api.campaigns[":id"].$get({
-        param: { id },
-      });
+      const res = await api(`/campaigns/${id}`);
       if (!res.ok) throw new Error("Failed to fetch details");
       const result = await res.json();
       if (!result.success) throw new Error(result.error as string || "Failed to fetch details");
@@ -52,7 +50,7 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
     mutationFn: async (updatedData: any) => {
       const budgetCents = Math.round(parseFloat(updatedData.budget) * 100) || 0;
 
-      const res = await fetch(`/api/campaigns/${id}`, {
+      const res = await api(`/campaigns/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -83,8 +81,10 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
 
   const handleCreateChat = async (influencerId: string) => {
     try {
-      const res = await api.api.chat.room.$post({
-        json: { influencerId, campaignId: id },
+      const res = await api("/chat/room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ influencerId, campaignId: id }),
       });
       if (res.ok) {
         const result = await res.json();

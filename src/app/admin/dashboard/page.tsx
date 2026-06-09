@@ -5,6 +5,7 @@ import { useAuth } from "../../layout-shell";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/lib/api-client";
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
@@ -13,10 +14,10 @@ export default function AdminDashboardPage() {
     queryKey: ["adminDashboardData"],
     queryFn: async () => {
       const [repRes, usersRes, campRes, profRes] = await Promise.all([
-        fetch("/api/admin/reports", { credentials: "include" }),
-        fetch("/api/admin/users", { credentials: "include" }),
-        fetch("/api/admin/campaigns", { credentials: "include" }),
-        fetch("/api/admin/pending-profiles?status=pending", { credentials: "include" }),
+        api("/admin/reports"),
+        api("/admin/users"),
+        api("/admin/campaigns"),
+        api("/admin/pending-profiles?status=pending"),
       ]);
 
       const rep = await repRes.json() as any;

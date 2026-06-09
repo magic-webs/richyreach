@@ -46,7 +46,14 @@ export const useAuthStore = create<AuthState>()(
         set((state) => ({
           notifications: state.notifications.map((n) => ({ ...n, read: true })),
         })),
-      logout: () => set({ user: defaultSessionUser, notifications: [] }),
+      logout: () => {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("reelio_session_token");
+          // Clear the middleware-readable cookie too
+          document.cookie = "reelio_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+        }
+        set({ user: defaultSessionUser, notifications: [] });
+      },
     }),
     {
       name: "auth-storage",

@@ -6,6 +6,7 @@ import { useAuth } from "../../layout-shell";
 import { InfluencerAccountCard } from "./_components/InfluencerAccountCard";
 import { BrandAccountCard } from "./_components/BrandAccountCard";
 import { EditAccountModal } from "./_components/EditAccountModal";
+import { api } from "@/lib/api-client";
 
 export default function AdminProfilesPage() {
   const { user } = useAuth();
@@ -26,7 +27,7 @@ export default function AdminProfilesPage() {
   const { data, isLoading: loading } = useQuery({
     queryKey: ["admin-profiles", filterStatus],
     queryFn: async () => {
-      const res = await fetch(`/api/admin/pending-profiles?status=${filterStatus}`, { credentials: "include" });
+      const res = await api(`/admin/pending-profiles?status=${filterStatus}`);
       const json = await res.json() as any;
       if (!json.success) throw new Error(json.error || "Failed to load");
       return json.data;
@@ -36,7 +37,7 @@ export default function AdminProfilesPage() {
 
   const verifyMutation = useMutation({
     mutationFn: async ({ accountId, accountType, action, note }: { accountId: string, accountType: "influencer" | "brand", action: "approve" | "reject", note?: string }) => {
-      const res = await fetch("/api/admin/verify-profile", {
+      const res = await api("/api/admin/verify-profile", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -57,7 +58,7 @@ export default function AdminProfilesPage() {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (payload: { accountId: string, accountType: "influencer" | "brand", updates: any }) => {
-      const res = await fetch("/api/admin/update-profile", {
+      const res = await api("/api/admin/update-profile", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

@@ -156,7 +156,7 @@ export default function BrandMarketplacePage() {
       if (filterTier !== "All Tiers") q.level = filterTier;
       if (search) q.search = search;
       if (minReachScore > 0) q.minReachScore = String(minReachScore);
-      const res = await api.api.influencers.$get({ query: q });
+      const res = await api(`/influencers?${new URLSearchParams(q).toString()}`);
       if (!res.ok) throw new Error("Failed to fetch influencers");
       const r = await res.json();
       return ((r.data as any).items || (r.data as any) || []) as Influencer[];
@@ -167,7 +167,7 @@ export default function BrandMarketplacePage() {
   const { data: savedIds = new Set<string>() } = useQuery({
     queryKey: ["saved_influencers"],
     queryFn: async () => {
-      const res = await fetch("/api/brands/saved-influencers");
+      const res = await api("/brands/saved-influencers");
       if (!res.ok) return new Set<string>();
       const r = await res.json() as any;
       if (r.success && r.data) return new Set((r.data as any[]).map((s) => s.id));
@@ -179,10 +179,10 @@ export default function BrandMarketplacePage() {
   const saveMutation = useMutation({
     mutationFn: async (inf: Influencer) => {
       if (savedIds.has(inf.id)) {
-        await fetch(`/api/brands/save-influencer/${inf.id}`, { method: "DELETE" });
+        await api(`/brands/save-influencer/${inf.id}`, { method: "DELETE" });
         return { id: inf.id, saved: false };
       } else {
-        await fetch("/api/brands/save-influencer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ influencerId: inf.id }) });
+        await api("/brands/save-influencer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ influencerId: inf.id }) });
         return { id: inf.id, saved: true };
       }
     },

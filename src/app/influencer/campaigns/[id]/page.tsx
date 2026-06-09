@@ -24,7 +24,7 @@ export default function InfluencerCampaignDetailsPage({ params }: { params: Prom
   const { data: profile } = useQuery({
     queryKey: ["influencerProfile", user.id],
     queryFn: async () => {
-      const res = await api.api.influencers[":id"].$get({ param: { id: user.id } });
+      const res = await api(`/influencers/${user.id}`);
       if (!res.ok) throw new Error("Failed to fetch profile");
       const result = await res.json();
       return result.data as any;
@@ -35,7 +35,7 @@ export default function InfluencerCampaignDetailsPage({ params }: { params: Prom
   const { data: accounts } = useQuery({
     queryKey: ["influencerAccounts"],
     queryFn: async () => {
-      const res = await api.api.influencers.accounts.$get();
+      const res = await api("/influencers/accounts");
       if (!res.ok) throw new Error("Failed to fetch accounts");
       const result = await res.json();
       return result.data as any[];
@@ -52,7 +52,7 @@ export default function InfluencerCampaignDetailsPage({ params }: { params: Prom
       // Let's use the generic campaign fetch. Actually, `api.api.campaigns[":id"].$get` might be restricted to brands?
       // Let's assume the endpoint returns public data or we fetch the marketplace array and filter it.
       // A better way is fetching the full array and picking one if there's no single fetch.
-      const res = await api.api.influencers["marketplace-campaigns"].$get({ query: { limit: "100" } });
+      const res = await api("/influencers/marketplace-campaigns?limit=100");
       if (!res.ok) throw new Error("Failed to fetch campaigns");
       const result = await res.json();
       if (!result.success) throw new Error(result.error as string || "Failed to fetch");
@@ -66,12 +66,13 @@ export default function InfluencerCampaignDetailsPage({ params }: { params: Prom
 
   const applyMutation = useMutation({
     mutationFn: async (propText: string) => {
-      const res = await (api.api.influencers.apply[":campaignId"].$post as any)({
-        param: { campaignId: id },
-        json: {
+      const res = await api(`/influencers/apply/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           proposal: propText,
           ...(selectedAccountId ? { influencerAccountId: selectedAccountId } : {})
-        },
+        }),
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok || !result.success) {

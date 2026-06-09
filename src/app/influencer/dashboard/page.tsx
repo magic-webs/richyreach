@@ -18,7 +18,7 @@ export default function InfluencerDashboardPage() {
   const { data: dashboardData, isLoading: dashboardLoading } = useQuery({
     queryKey: ["influencerDashboard"],
     queryFn: async () => {
-      const res = await api.api.influencers.dashboard.$get();
+      const res = await api("/influencers/dashboard");
       if (!res.ok) throw new Error("Failed to load dashboard");
       const result = await res.json();
       return result.success ? result.data : null;
@@ -29,7 +29,7 @@ export default function InfluencerDashboardPage() {
   const { data: campaignsData = { applications: [], invites: [] }, isLoading: campaignsLoading } = useQuery({
     queryKey: ["influencerCampaigns"],
     queryFn: async () => {
-      const res = await api.api.influencers.campaigns.$get();
+      const res = await api("/influencers/campaigns");
       if (!res.ok) throw new Error("Failed to load campaigns");
       const result = await res.json();
       return result.success ? result.data : { applications: [], invites: [] };

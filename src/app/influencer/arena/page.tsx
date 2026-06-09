@@ -19,7 +19,7 @@ export default function ArenaPage() {
     const fetchArenas = async () => {
         setLoading(true);
         try {
-            const res = await api.api.arena.$get();
+            const res = await api("/arena");
             if (res.ok) {
                 const json = (await res.json()) as any;
                 setArenas(json.data || []);

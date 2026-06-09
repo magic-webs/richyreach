@@ -32,7 +32,7 @@ export default function ChatPage() {
   const fetchRooms = async (autoSelect = false) => {
     try {
       if (rooms.length === 0) setLoadingRooms(true);
-      const res = await api.api.chat.rooms.$get();
+      const res = await api("/chat/rooms");
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
@@ -53,9 +53,7 @@ export default function ChatPage() {
   const fetchMessages = async (roomId: string, quiet = false) => {
     try {
       if (!quiet) setLoadingMessages(true);
-      const res = await api.api.chat.messages[":roomId"].$get({
-        param: { roomId },
-      });
+      const res = await api(`/chat/messages/${roomId}`);
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
@@ -133,9 +131,10 @@ export default function ChatPage() {
       // Fallback to REST API if WS fails
       try {
         setSending(true);
-        const res = await (api.api.chat.message[":roomId"].$post as any)({
-          param: { roomId: selectedRoom.roomId },
-          json: { content: newMessage.trim() },
+        const res = await api(`/chat/message/${selectedRoom.roomId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: newMessage.trim() }),
         });
 
         if (res.ok) {

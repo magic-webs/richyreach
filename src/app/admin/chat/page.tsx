@@ -1,11 +1,20 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import {
+  useEffect,
+  useState,
+  useRef
+} from "react";
 import { useAuth } from "../../layout-shell";
 import { api } from "@/lib/api-client";
 import { Input } from "@/components/ui/input";
 import { GlassButton } from "@/components/ui/glass-button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 
 export default function AdminChatPage() {
   const { user } = useAuth();
@@ -37,7 +46,7 @@ export default function AdminChatPage() {
   const fetchRooms = async () => {
     try {
       setLoadingRooms(true);
-      const res = await api.api.chat.rooms.$get();
+      const res = await api("/chat/rooms");
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
@@ -54,9 +63,7 @@ export default function AdminChatPage() {
   const fetchMessages = async (roomId: string, quiet = false) => {
     try {
       if (!quiet) setLoadingMessages(true);
-      const res = await (api.api.chat.messages[":roomId"].$get as any)({
-        param: { roomId },
-      });
+      const res = await api(`/chat/messages/${roomId}`);
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
@@ -73,7 +80,7 @@ export default function AdminChatPage() {
   const fetchUsersList = async () => {
     try {
       setLoadingUsers(true);
-      const res = await (api.api.admin as any).users.$get(); // Use any just in case types aren't fully generated yet
+      const res = await api("/admin/users");
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
@@ -119,7 +126,7 @@ export default function AdminChatPage() {
           console.error("WS Error:", data.error);
           return;
         }
-        
+
         // Append new message to state
         setMessages((prev) => {
           // Prevent duplicates
@@ -149,8 +156,10 @@ export default function AdminChatPage() {
   const handleStartNewChat = async (targetUserId: string) => {
     try {
       setIsNewChatOpen(false);
-      const res = await (api.api.chat.admin.room.$post as any)({
-        json: { userId: targetUserId }
+      const res = await api("/chat/admin/room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: targetUserId }),
       });
       if (res.ok) {
         const result = await res.json();
@@ -176,9 +185,10 @@ export default function AdminChatPage() {
     } else {
       try {
         setSending(true);
-        const res = await (api.api.chat.message[":roomId"].$post as any)({
-          param: { roomId: selectedRoom.roomId },
-          json: { content: newMessage.trim() },
+        const res = await api(`/chat/message/${selectedRoom.roomId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: newMessage.trim() }),
         });
 
         if (res.ok) {
@@ -199,8 +209,8 @@ export default function AdminChatPage() {
 
   if (user?.role !== "admin") return null;
 
-  const filteredUsers = usersList.filter(u => 
-    u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredUsers = usersList.filter(u =>
+    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -213,7 +223,7 @@ export default function AdminChatPage() {
             <h2 className="text-base font-bold text-slate-900 dark:text-white">Support Channels</h2>
             <p className="text-[10px] text-slate-500 font-semibold uppercase mt-1">Direct User Messages</p>
           </div>
-          <button 
+          <button
             onClick={() => setIsNewChatOpen(true)}
             className="p-2 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-white transition-colors cursor-pointer"
             title="Start New Chat"
@@ -239,7 +249,7 @@ export default function AdminChatPage() {
           ) : (
             rooms.map((room) => {
               const isSelected = selectedRoom?.roomId === room.roomId;
-              
+
               return (
                 <div
                   key={room.roomId}
@@ -285,7 +295,7 @@ export default function AdminChatPage() {
           <>
             {/* Thread Header */}
             <div className="p-4 border-b border-slate-150 dark:border-slate-800/60 flex items-center gap-3.5 z-10 bg-slate-50/80 dark:bg-slate-900/55 backdrop-blur-md">
-              <button 
+              <button
                 onClick={() => setSelectedRoom(null)}
                 className="md:hidden p-2 -ml-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
               >
@@ -390,8 +400,8 @@ export default function AdminChatPage() {
             <DialogTitle>Start New Support Chat</DialogTitle>
           </DialogHeader>
           <div className="py-2 space-y-4">
-            <Input 
-              placeholder="Search user by name or email..." 
+            <Input
+              placeholder="Search user by name or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -402,7 +412,7 @@ export default function AdminChatPage() {
                 <p className="text-xs text-center text-slate-500 py-4">No users found.</p>
               ) : (
                 filteredUsers.map((u) => (
-                  <div 
+                  <div
                     key={u.id}
                     className="flex items-center justify-between p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-all"
                     onClick={() => handleStartNewChat(u.id)}

@@ -16,7 +16,7 @@ export default function BrandDashboardPage() {
   const { data: dashboardData, isLoading, error } = useQuery({
     queryKey: ["brandDashboard", user.id],
     queryFn: async () => {
-      const res = await api.api.brands.dashboard.$get();
+      const res = await api("/brands/dashboard");
       if (!res.ok) throw new Error("Failed to fetch dashboard");
       const result = await res.json();
       if (!result.success) throw new Error(result.error as string || "Failed to fetch dashboard");
@@ -31,8 +31,10 @@ export default function BrandDashboardPage() {
 
   const handleCreateChat = async (influencerId: string) => {
     try {
-      const res = await api.api.chat.room.$post({
-        json: { influencerId },
+      const res = await api("/chat/room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ influencerId }),
       });
       if (res.ok) {
         const result = await res.json();

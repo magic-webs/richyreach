@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../layout-shell";
+import { useAuthStore } from "@/store/useAuthStore";
 import { api } from "@/lib/api-client";
 import { GlassButton } from "@/components/ui/glass-button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,16 +43,15 @@ export default function InfluencerProfilePage() {
   const [youtube, setYoutube] = useState("");
 
   const handleLogout = async () => {
-    try { await fetch("/api/auth/logout", { method: "POST" }); } catch (_) { }
-    localStorage.removeItem("reelio_session_token");
-    localStorage.removeItem("reelio_mock_user");
+    try { await api("/auth/logout", { method: "POST" }); } catch (_) { }
+    useAuthStore.getState().logout();
     router.push("/authentication");
   };
 
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const res = await api.api.influencers[":id"].$get({ param: { id: user.id } });
+      const res = await api(`/influencers/${user.id}`);
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
@@ -112,7 +112,7 @@ export default function InfluencerProfilePage() {
     setLoading(true);
     setSaveError(null);
     try {
-      const res = await api.api.influencers["sync-instagram"].$post();
+      const res = await api("/influencers/sync-instagram", { method: "POST" });
       const result = await res.json();
       if (res.ok && result.success && result.data) {
         const d = result.data as any;
@@ -152,15 +152,17 @@ export default function InfluencerProfilePage() {
     setSaveError(null);
     try {
       setSaving(true);
-      const res = await api.api.influencers.profile.$post({
-        json: {
+      const res = await api("/influencers/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           instagramHandle,
           pricing: Math.round(parseFloat(pricingUsd) * 100) || 0,
           niche,
           skills: skillsText.split(",").map((s) => s.trim()).filter(Boolean),
           country,
           socialLinks: { twitter, tiktok, youtube },
-        },
+        }),
       });
       const result = await res.json();
       if (res.ok && result.success) {

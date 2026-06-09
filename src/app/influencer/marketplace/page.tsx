@@ -66,7 +66,7 @@ export default function InfluencerMarketplacePage() {
   const { data: campaigns = [], isLoading: loadingCampaigns } = useQuery({
     queryKey: ["marketplaceCampaigns", search],
     queryFn: async () => {
-      const res = await api.api.influencers["marketplace-campaigns"].$get({ query: { search, limit: "30" } });
+      const res = await api(`/influencers/marketplace-campaigns?search=${encodeURIComponent(search)}&limit=30`);
       if (!res.ok) throw new Error("Failed to load campaigns");
       const r = await res.json();
       return r.success && r.data ? (r.data as Campaign[]) : [];
@@ -77,7 +77,7 @@ export default function InfluencerMarketplacePage() {
   const { data: applications = { applications: [], invites: [] }, isLoading: loadingApplications } = useQuery({
     queryKey: ["marketplaceApplications"],
     queryFn: async () => {
-      const res = await api.api.influencers.campaigns.$get();
+      const res = await api("/influencers/campaigns");
       if (!res.ok) throw new Error("Failed to load applications");
       const r = await res.json();
       return r.success && r.data ? (r.data as any) : { applications: [], invites: [] };
@@ -88,9 +88,13 @@ export default function InfluencerMarketplacePage() {
   const saveMutation = useMutation({
     mutationFn: async (campaign: Campaign) => {
       if (campaign.isSaved) {
-        await api.api.influencers["save-campaign"][":campaignId"].$delete({ param: { campaignId: campaign.id } });
+        await api(`/influencers/save-campaign/${campaign.id}`, { method: "DELETE" });
       } else {
-        await api.api.influencers["save-campaign"].$post({ json: { campaignId: campaign.id } });
+        await api("/influencers/save-campaign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ campaignId: campaign.id }),
+        });
       }
       return campaign;
     },

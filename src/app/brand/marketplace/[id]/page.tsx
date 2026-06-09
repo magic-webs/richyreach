@@ -66,7 +66,7 @@ export default function InfluencerProfilePage({ params }: { params: Promise<{ id
   const { data: influencer, isLoading: loadingInfluencer, error } = useQuery({
     queryKey: ["influencer", id],
     queryFn: async () => {
-      const res = await api.api.influencers[":id"].$get({ param: { id } });
+      const res = await api(`/influencers/${id}`);
       if (!res.ok) throw new Error("Failed to fetch influencer profile");
       const r = await res.json();
       return r.data as Influencer;
@@ -77,7 +77,7 @@ export default function InfluencerProfilePage({ params }: { params: Promise<{ id
   const { data: campaigns = [], isLoading: loadingCampaigns } = useQuery({
     queryKey: ["campaigns"],
     queryFn: async () => {
-      const res = await api.api.campaigns.$get();
+      const res = await api("/campaigns");
       if (!res.ok) throw new Error("Failed to fetch campaigns");
       const r = await res.json();
       return r.data as Campaign[];
@@ -88,9 +88,10 @@ export default function InfluencerProfilePage({ params }: { params: Promise<{ id
   const inviteMutation = useMutation({
     mutationFn: async (campaignId: string) => {
       // @ts-ignore
-      const res = await api.api.influencers[":id"].invite.$post({
-        param: { id },
-        json: { influencerId: id, campaignId },
+      const res = await api(`/influencers/${id}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ influencerId: id, campaignId }),
       });
       if (!res.ok) throw new Error("Failed to invite influencer");
       return res.json();

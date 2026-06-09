@@ -1,18 +1,29 @@
-import { hc } from "hono/client";
-import { AppType } from "@/server";
-
 const getBaseUrl = () => {
-  if (typeof window !== "undefined") {
-    return window.location.origin;
-  }
-  // Fallback for SSR / Server Actions / Route Handlers
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  return process.env.NEXT_PUBLIC_API_URL || "https://backend-api.richyreach.com/api";
 };
 
-export const api = hc<AppType>(getBaseUrl(), {
-  fetch: (input: RequestInfo | URL, init?: RequestInit) => {
-    // Always send cookies (including reelio_session) with every API request
-    return fetch(input, { ...init, credentials: "include" });
+export const api = async (path: string, options: RequestInit = {}) => {
+  const baseUrl = getBaseUrl();
+  // Ensure we don't end up with double slashes if path has a leading slash
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const url = `${baseUrl}${cleanPath}`;
+
+  const headers = new Headers(options.headers);
+
+  // Check if token exists in localStorage (only in client/browser environment)
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("reelio_session_token");
+    if (token && !headers.has("Authorization")) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
   }
-});
+
+  return fetch(url, {
+    ...options,
+    headers,
+    credentials: "include", // Required for session cookie handling
+  });
+};
+
 export type ApiClient = typeof api;
+
