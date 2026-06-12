@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../../../layout-shell";
 import { useParams, useRouter } from "next/navigation";
+import { api } from "@/lib/api-client";
 
 export default function EditProfilePage() {
   const params = useParams();
@@ -24,7 +25,7 @@ export default function EditProfilePage() {
   const { data: account, isLoading } = useQuery({
     queryKey: ["admin-profile", type, id],
     queryFn: async () => {
-      const res = await fetch(`/api/admin/profile/${type}/${id}`, { credentials: "include" });
+      const res = await api(`/api/admin/profile/${type}/${id}`, { credentials: "include" });
       const json = await res.json() as any;
       if (!json.success) throw new Error(json.error || "Failed to load");
       return json.data;
@@ -39,7 +40,7 @@ export default function EditProfilePage() {
   const updateProfileMutation = useMutation({
     mutationFn: async (updates: any) => {
       const payload = { accountId: id, accountType: type, updates };
-      const res = await fetch("/api/admin/update-profile", {
+      const res = await api("/api/admin/update-profile", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
