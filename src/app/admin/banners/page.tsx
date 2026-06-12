@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../../layout-shell";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, Trash2, Edit, Loader2, Sparkles, AlertCircle, RefreshCw } from "lucide-react";
+import { Search, Plus, Trash2, Edit, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api-client";
 import { toast } from "sonner";
@@ -13,6 +13,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { GlassPurpleButton } from "@/components/ui/glass-purple-button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { ImageUploadField } from "../campaign-images/_components/ImageUploadField";
 
 interface Banner {
@@ -258,27 +278,27 @@ export default function AdminBannersPage() {
           </p>
         </div>
 
-        <button
+        <GlassPurpleButton
           onClick={() => {
             resetForm();
             setIsAddOpen(true);
           }}
-          className="btn-glass-purple flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl font-bold text-sm text-white cursor-pointer border-none shadow-md transition-all active:scale-[0.98]"
+          className="px-6 py-2.5 rounded-2xl"
         >
           <Plus className="w-4 h-4" />
           Add Banner
-        </button>
+        </GlassPurpleButton>
       </div>
 
       {/* ── Search Bar ── */}
-      <div className="relative max-w-md bg-white dark:bg-slate-900/30 rounded-2xl border border-slate-200 dark:border-slate-800/60 p-1 flex items-center">
-        <Search className="w-5 h-5 ml-3 text-slate-450 dark:text-slate-500" />
-        <input
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
           type="text"
           placeholder="Search position, title, subtitle..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-2 pr-4 py-2 text-sm bg-transparent border-0 focus:outline-none focus:ring-0 text-slate-900 dark:text-white"
+          className="pl-9 h-10 w-full"
         />
       </div>
 
@@ -323,17 +343,17 @@ export default function AdminBannersPage() {
             }
 
             return (
-              <div
+              <Card
                 key={banner.id}
-                className="bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800/60 rounded-3xl shadow-sm dark:shadow-none overflow-hidden flex flex-col h-full justify-between"
+                className="overflow-hidden flex flex-col h-full justify-between border-muted/65 shadow-xs"
               >
                 {/* Visual Preview */}
-                <div style={previewStyle} className="h-32 p-4 flex flex-col justify-end relative">
+                <div style={previewStyle} className="h-32 p-4 flex flex-col justify-end relative rounded-t-xl overflow-hidden">
                   <div className="absolute top-3 right-3 flex items-center gap-2">
                     <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-black/40 text-white rounded-md backdrop-blur-sm">
                       {banner.position}
                     </span>
-                    <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${banner.isActive ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-rose-500/20 text-rose-400 border border-rose-500/30"}`}>
+                    <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${banner.isActive ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" : "bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30"}`}>
                       {banner.isActive ? "Active" : "Inactive"}
                     </span>
                   </div>
@@ -347,30 +367,42 @@ export default function AdminBannersPage() {
                   </div>
                 </div>
 
-                {/* Details Footer */}
-                <div className="p-4 bg-slate-50/50 dark:bg-slate-900/10 border-t border-slate-100 dark:border-slate-800/40 flex items-center justify-between text-xs text-slate-500">
-                  <div className="space-y-1">
-                    <p className="truncate max-w-[150px]">Link: <span className="font-bold text-slate-800 dark:text-slate-300">{banner.link || "none"}</span></p>
-                    <p>Order: <span className="font-semibold">{banner.displayOrder}</span></p>
+                <CardContent className="pt-4 pb-0 flex flex-col gap-1.5 text-xs text-muted-foreground">
+                  <div className="flex justify-between items-center">
+                    <span>Target Link:</span>
+                    <span className="font-semibold text-foreground truncate max-w-[160px]" title={banner.link || "none"}>
+                      {banner.link || "none"}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => loadEditTarget(banner)}
-                      className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-slate-700 dark:text-slate-350"
-                      title="Edit"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(banner.id)}
-                      className="p-2 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/20 rounded-xl transition-all cursor-pointer text-rose-500"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <div className="flex justify-between items-center">
+                    <span>Display Order:</span>
+                    <span className="font-semibold text-foreground">{banner.displayOrder}</span>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+
+                <CardFooter className="flex items-center justify-end gap-2 pt-4 border-t border-muted/30 bg-muted/20">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => loadEditTarget(banner)}
+                    title="Edit Banner"
+                    className="cursor-pointer"
+                  >
+                    <Edit className="w-3.5 h-3.5 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleDelete(banner.id)}
+                    title="Delete Banner"
+                    className="cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    Delete
+                  </Button>
+                </CardFooter>
+              </Card>
             );
           })}
         </div>
@@ -394,120 +426,128 @@ export default function AdminBannersPage() {
 
           <form onSubmit={handleCreate} className="space-y-4 mt-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Position/Location *
-                </label>
-                <select
+                </Label>
+                <Select
                   value={position}
-                  onChange={(e) => setPosition(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
+                  onValueChange={(val) => val && setPosition(val)}
                 >
-                  <option value="home_top">Home Top</option>
-                  <option value="marketplace_top">Marketplace Top</option>
-                  <option value="profile_top">Profile Settings Top</option>
-                </select>
+                  <SelectTrigger className="w-full h-8 text-sm">
+                    <SelectValue placeholder="Select position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="home_top">Home Top</SelectItem>
+                    <SelectItem value="marketplace_top">Marketplace Top</SelectItem>
+                    <SelectItem value="profile_top">Profile Settings Top</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Banner Type *
-                </label>
-                <select
+                </Label>
+                <Select
                   value={bannerType}
-                  onChange={(e) => setBannerType(e.target.value as any)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
+                  onValueChange={(val) => setBannerType(val as any)}
                 >
-                  <option value="mixed">Mixed (Bg Image & Text Overlay)</option>
-                  <option value="image">Image Only (Bg Image)</option>
-                  <option value="color">Solid Background Color</option>
-                  <option value="gradient">Linear Gradient Colors</option>
-                </select>
+                  <SelectTrigger className="w-full h-8 text-sm">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mixed">Mixed (Bg Image & Text Overlay)</SelectItem>
+                    <SelectItem value="image">Image Only (Bg Image)</SelectItem>
+                    <SelectItem value="color">Solid Background Color</SelectItem>
+                    <SelectItem value="gradient">Linear Gradient Colors</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="create-title" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Banner Title
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="create-title"
                   type="text"
                   placeholder="e.g. Unlock Pro Features"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="create-subtitle" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Banner Subtitle
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="create-subtitle"
                   type="text"
                   placeholder="e.g. Save 60% off today!"
                   value={subtitle}
                   onChange={(e) => setSubtitle(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="create-link" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Navigation Path / Link URL
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="create-link"
                   type="text"
                   placeholder="e.g. /(tabs)/marketplace"
                   value={link}
                   onChange={(e) => setLink(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="create-textColor" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Text Hex Color
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="create-textColor"
                   type="text"
                   placeholder="e.g. #ffffff"
                   value={textColor}
                   onChange={(e) => setTextColor(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
             </div>
 
             {bannerType === "color" && (
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="create-bgColor" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Background Color (Hex code)
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="create-bgColor"
                   type="text"
                   placeholder="e.g. #3f030b"
                   value={bgColor}
                   onChange={(e) => setBgColor(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
             )}
 
             {bannerType === "gradient" && (
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="create-gradientColorsText" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Gradient Hex Colors (Comma separated)
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="create-gradientColorsText"
                   type="text"
                   placeholder="e.g. #2a0207, #7e1523"
                   value={gradientColorsText}
                   onChange={(e) => setGradientColorsText(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
             )}
@@ -525,63 +565,61 @@ export default function AdminBannersPage() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="create-displayOrder" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Display Sorting Order
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="create-displayOrder"
                   type="number"
                   placeholder="e.g. 0"
                   value={displayOrder}
                   onChange={(e) => setDisplayOrder(parseInt(e.target.value) || 0)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
 
-              <div className="flex items-center gap-3 pt-6">
-                <input
-                  type="checkbox"
-                  id="isActive"
+              <div className="flex items-center gap-3 pt-5">
+                <Switch
+                  id="create-isActive"
                   checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
-                  className="w-5 h-5 rounded border-slate-200 dark:border-slate-800 accent-primary"
+                  onCheckedChange={setIsActive}
                 />
-                <label htmlFor="isActive" className="text-sm font-bold text-slate-700 dark:text-slate-300 select-none">
+                <Label htmlFor="create-isActive" className="text-sm font-bold text-slate-700 dark:text-slate-350 select-none cursor-pointer">
                   Banner is active
-                </label>
+                </Label>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="create-startDate" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Schedule Start (Optional)
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="create-startDate"
                   type="datetime-local"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="create-endDate" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Schedule End (Optional)
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="create-endDate"
                   type="datetime-local"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
             </div>
 
-            <button
+            <Button
               type="submit"
               disabled={createMutation.isPending}
-              className="btn-glass-purple w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-white font-bold shadow-md transition-all disabled:opacity-50 active:scale-[0.99] text-sm mt-2 border-none cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-3 h-10 text-white font-bold cursor-pointer transition-all mt-2"
             >
               {createMutation.isPending ? (
                 <>
@@ -590,7 +628,7 @@ export default function AdminBannersPage() {
               ) : (
                 "Save Banner"
               )}
-            </button>
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
@@ -611,120 +649,128 @@ export default function AdminBannersPage() {
 
           <form onSubmit={handleUpdate} className="space-y-4 mt-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Position/Location *
-                </label>
-                <select
+                </Label>
+                <Select
                   value={position}
-                  onChange={(e) => setPosition(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
+                  onValueChange={(val) => val && setPosition(val)}
                 >
-                  <option value="home_top">Home Top</option>
-                  <option value="marketplace_top">Marketplace Top</option>
-                  <option value="profile_top">Profile Settings Top</option>
-                </select>
+                  <SelectTrigger className="w-full h-8 text-sm">
+                    <SelectValue placeholder="Select position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="home_top">Home Top</SelectItem>
+                    <SelectItem value="marketplace_top">Marketplace Top</SelectItem>
+                    <SelectItem value="profile_top">Profile Settings Top</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Banner Type *
-                </label>
-                <select
+                </Label>
+                <Select
                   value={bannerType}
-                  onChange={(e) => setBannerType(e.target.value as any)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
+                  onValueChange={(val) => setBannerType(val as any)}
                 >
-                  <option value="mixed">Mixed (Bg Image & Text Overlay)</option>
-                  <option value="image">Image Only (Bg Image)</option>
-                  <option value="color">Solid Background Color</option>
-                  <option value="gradient">Linear Gradient Colors</option>
-                </select>
+                  <SelectTrigger className="w-full h-8 text-sm">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mixed">Mixed (Bg Image & Text Overlay)</SelectItem>
+                    <SelectItem value="image">Image Only (Bg Image)</SelectItem>
+                    <SelectItem value="color">Solid Background Color</SelectItem>
+                    <SelectItem value="gradient">Linear Gradient Colors</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-title" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Banner Title
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="edit-title"
                   type="text"
                   placeholder="e.g. Unlock Pro Features"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-subtitle" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Banner Subtitle
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="edit-subtitle"
                   type="text"
                   placeholder="e.g. Save 60% off today!"
                   value={subtitle}
                   onChange={(e) => setSubtitle(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-link" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Navigation Path / Link URL
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="edit-link"
                   type="text"
                   placeholder="e.g. /(tabs)/marketplace"
                   value={link}
                   onChange={(e) => setLink(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-textColor" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Text Hex Color
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="edit-textColor"
                   type="text"
                   placeholder="e.g. #ffffff"
                   value={textColor}
                   onChange={(e) => setTextColor(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
             </div>
 
             {bannerType === "color" && (
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-bgColor" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Background Color (Hex code)
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="edit-bgColor"
                   type="text"
                   placeholder="e.g. #3f030b"
                   value={bgColor}
                   onChange={(e) => setBgColor(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
             )}
 
             {bannerType === "gradient" && (
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-gradientColorsText" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Gradient Hex Colors (Comma separated)
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="edit-gradientColorsText"
                   type="text"
                   placeholder="e.g. #2a0207, #7e1523"
                   value={gradientColorsText}
                   onChange={(e) => setGradientColorsText(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
             )}
@@ -742,63 +788,61 @@ export default function AdminBannersPage() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-displayOrder" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Display Sorting Order
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="edit-displayOrder"
                   type="number"
                   placeholder="e.g. 0"
                   value={displayOrder}
                   onChange={(e) => setDisplayOrder(parseInt(e.target.value) || 0)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
 
-              <div className="flex items-center gap-3 pt-6">
-                <input
-                  type="checkbox"
-                  id="isActiveEdit"
+              <div className="flex items-center gap-3 pt-5">
+                <Switch
+                  id="edit-isActive"
                   checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
-                  className="w-5 h-5 rounded border-slate-200 dark:border-slate-800 accent-primary"
+                  onCheckedChange={setIsActive}
                 />
-                <label htmlFor="isActiveEdit" className="text-sm font-bold text-slate-700 dark:text-slate-300 select-none">
+                <Label htmlFor="edit-isActive" className="text-sm font-bold text-slate-700 dark:text-slate-350 select-none cursor-pointer">
                   Banner is active
-                </label>
+                </Label>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-startDate" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Schedule Start (Optional)
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="edit-startDate"
                   type="datetime-local"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-endDate" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Schedule End (Optional)
-                </label>
-                <input
+                </Label>
+                <Input
+                  id="edit-endDate"
                   type="datetime-local"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white"
                 />
               </div>
             </div>
 
-            <button
+            <Button
               type="submit"
               disabled={updateMutation.isPending}
-              className="btn-glass-purple w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-white font-bold shadow-md transition-all disabled:opacity-50 active:scale-[0.99] text-sm mt-2 border-none cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-3 h-10 text-white font-bold cursor-pointer transition-all mt-2"
             >
               {updateMutation.isPending ? (
                 <>
@@ -807,7 +851,7 @@ export default function AdminBannersPage() {
               ) : (
                 "Save Changes"
               )}
-            </button>
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
