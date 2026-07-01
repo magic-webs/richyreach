@@ -30,11 +30,15 @@ function getRequiredRole(pathname: string): string | null {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Always allow public routes and API routes
+  // Always allow public routes, PWA assets, and API routes
   if (
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
+    pathname === "/sw.js" ||
+    pathname === "/manifest.webmanifest" ||
+    pathname.endsWith(".webmanifest") ||
+    pathname.startsWith("/icon-") ||
     matchesPublicPath(pathname)
   ) {
     return NextResponse.next();
@@ -112,6 +116,6 @@ export async function proxy(request: NextRequest) {
 export const config = {
   // Match all routes except Next.js internals and static assets
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|webmanifest)$).*)",
   ],
 };
