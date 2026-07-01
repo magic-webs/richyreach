@@ -33,11 +33,36 @@ export default function CreateCampaignPage() {
   const [isArena, setIsArena] = useState(false);
   const [maxReachCap, setMaxReachCap] = useState("100000");
 
+  const [arenaTemplates, setArenaTemplates] = useState<any[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [selectedBannerUrl, setSelectedBannerUrl] = useState("");
+  const [category, setCategory] = useState("General");
+
   // AI generated and editable fields
   const [aiTitle, setAiTitle] = useState("");
   const [aiDescription, setAiDescription] = useState("");
   const [aiTargetAudience, setAiTargetAudience] = useState("");
   const [aiRequirements, setAiRequirements] = useState("");
+
+  useEffect(() => {
+    const loadTemplates = async () => {
+      setLoadingTemplates(true);
+      try {
+        const res = await api("/arena/templates");
+        if (res.ok) {
+          const json = (await res.json()) as any;
+          if (json.success) {
+            setArenaTemplates(json.data || []);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingTemplates(false);
+      }
+    };
+    if (user.role === "brand") loadTemplates();
+  }, [user.role]);
 
   useEffect(() => {
     const loadBrandAccounts = async () => {
@@ -117,39 +142,70 @@ export default function CreateCampaignPage() {
       alert("Please ensure the title and description are not empty.");
       return;
     }
+    if (isArena && !selectedBannerUrl) {
+      alert("Please select a banner image template for the Arena Contest.");
+      return;
+    }
     try {
       setSaving(true);
       const budgetCents = Math.round(parseFloat(budgetInr) * 100) || 0;
 
-      const res = await api("/campaigns/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: aiTitle,
-          description: aiDescription,
-          targetAudience: aiTargetAudience || null,
-          requirements: aiRequirements || null,
-          budget: budgetCents,
-          campaignType,
-          expectedReach: 150000,
-          brandAccountId: selectedBrandAccountId,
-          allowFraction,
-          isArena,
-          maxReachCap: isArena ? parseInt(maxReachCap) : null,
-        }),
-      });
+      let res;
+      if (isArena) {
+        res = await api("/arena/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-active-profile-id": selectedBrandAccountId
+          },
+          body: JSON.stringify({
+            title: aiTitle,
+            description: aiDescription,
+            arenaType: "reel_reach",
+            entryFeeCoins: 2000,
+            totalBudgetCoins: budgetCents,
+            maxParticipants: 100,
+            startDate: new Date().toISOString().split('T')[0],
+            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            category,
+            bannerUrl: selectedBannerUrl,
+            reviewGuidelines: aiRequirements || null,
+            verificationRules: { minRating: 4 }
+          }),
+        });
+      } else {
+        res = await api("/campaigns/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-active-profile-id": selectedBrandAccountId
+          },
+          body: JSON.stringify({
+            title: aiTitle,
+            description: aiDescription,
+            targetAudience: aiTargetAudience || null,
+            requirements: aiRequirements || null,
+            budget: budgetCents,
+            campaignType,
+            expectedReach: 150000,
+            brandAccountId: selectedBrandAccountId,
+            allowFraction,
+            category,
+          }),
+        });
+      }
 
       if (res.ok) {
         const result = (await res.json()) as any;
         if (result.success) {
-          alert("Campaign launched successfully!");
+          alert(isArena ? "Arena Contest launched successfully!" : "Campaign launched successfully!");
           router.push("/brand/dashboard");
         } else {
           alert("Error: " + JSON.stringify(result.error));
         }
       } else {
         const errorText = await res.text();
-        alert("Failed to create campaign: " + errorText);
+        alert("Failed: " + errorText);
       }
     } catch (error) {
       console.error(error);
@@ -262,12 +318,82 @@ export default function CreateCampaignPage() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label className="text-primary/80 dark:text-primary/80 text-xs font-bold uppercase tracking-wider">Niche / Category</Label>
+                <Select value={category} onValueChange={(val) => {
+                  if (val) {
+                    setCategory(val);
+                    setSelectedBannerUrl("");
+                  }
+                }}>
+                  <SelectTrigger className="bg-white dark:bg-slate-950/50 border-slate-200 dark:border-slate-700/50 text-slate-900 dark:text-white rounded-xl h-12">
+                    <SelectValue placeholder="Select Category" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-350">
+                    {["General", "Fashion", "Beauty", "Tech", "Food", "Travel", "Fitness", "Lifestyle", "Gaming", "Education"].map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {isArena && (
-                <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-4">
+                <div className="space-y-4">
+                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-xl space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-primary/80 dark:text-primary/80 text-xs font-bold uppercase tracking-wider">Max Reach Capping</Label>
+                      <Input type="number" min="1000" value={maxReachCap} onChange={(e) => setMaxReachCap(e.target.value)} className="bg-white dark:bg-slate-950/50 border-slate-200 dark:border-slate-700/50 text-slate-900 dark:text-white rounded-xl h-12 focus:border-primary" required />
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Coins will be paid for account reach (100 coins = 1 Rs). This sets a limit on maximum payout.</p>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label className="text-primary/80 dark:text-primary/80 text-xs font-bold uppercase tracking-wider">Max Reach Capping</Label>
-                    <Input type="number" min="1000" value={maxReachCap} onChange={(e) => setMaxReachCap(e.target.value)} className="bg-white dark:bg-slate-950/50 border-slate-200 dark:border-slate-700/50 text-slate-900 dark:text-white rounded-xl h-12 focus:border-primary" required />
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Coins will be paid for account reach (100 coins = 1 Rs). This sets a limit on maximum payout.</p>
+                    <Label className="text-primary/80 dark:text-primary/80 text-xs font-bold uppercase tracking-wider">Select Arena Banner *</Label>
+                    {loadingTemplates ? (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {[1, 2, 3, 4].map(i => (
+                          <div key={i} className="aspect-video bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse" />
+                        ))}
+                      </div>
+                    ) : (() => {
+                      const filtered = arenaTemplates.filter(t => t.category?.toLowerCase() === category.toLowerCase());
+                      const templatesToShow = filtered.length > 0
+                        ? filtered
+                        : arenaTemplates.filter(t => t.category?.toLowerCase() === 'general').length > 0
+                          ? arenaTemplates.filter(t => t.category?.toLowerCase() === 'general')
+                          : arenaTemplates;
+
+                      if (templatesToShow.length === 0) {
+                        return (
+                          <div className="text-xs text-slate-500 py-4">No banner templates available. Configure them in Admin section first.</div>
+                        );
+                      }
+
+                      return (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {templatesToShow.map(tmpl => {
+                            const active = selectedBannerUrl === tmpl.imageUrl;
+                            return (
+                              <div
+                                key={tmpl.id}
+                                onClick={() => setSelectedBannerUrl(tmpl.imageUrl)}
+                                className={`group relative aspect-video rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${
+                                  active ? "border-primary ring-2 ring-primary/20 scale-[0.98]" : "border-slate-200 dark:border-slate-800 hover:border-primary/50"
+                                }`}
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={tmpl.imageUrl} alt="Template" className="w-full h-full object-cover" />
+                                {active && (
+                                  <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                    <span className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shadow-md">✓</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
@@ -340,6 +466,16 @@ export default function CreateCampaignPage() {
         <div className="space-y-6">
           <Card className="bg-white/90 dark:bg-slate-900/60 border-primary/20 dark:border-primary/30 backdrop-blur-xl shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 dark:bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
+            {isArena && selectedBannerUrl && (
+              <div className="w-full h-48 relative overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={selectedBannerUrl} alt="Banner Preview" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
+                <span className="absolute bottom-4 left-6 text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-950/60 backdrop-blur-md text-white border border-white/10">
+                  {category} Contest Banner
+                </span>
+              </div>
+            )}
             <CardHeader className="border-b border-slate-200 dark:border-slate-800/50">
               <div className="flex justify-between items-start">
                 <div>

@@ -118,6 +118,15 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
           )
         },
         {
+          name: "Arena Banners",
+          href: "/admin/arena-images",
+          icon: () => (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 2a4 4 0 00-4 4v4H7a2 2 0 00-2 2v2a6 6 0 0012 0v-2a2 2 0 00-2-2h-1V6a4 4 0 00-4-4zM6 12a1 1 0 011-1h1v4H7a1 1 0 01-1-1v-2zm12 0a1 1 0 01-1-1h-1v4h1a1 1 0 011-1v-2zM12 16v4m-3 0h6" />
+            </svg>
+          )
+        },
+        {
           name: "Trending Songs",
           href: "/admin/trending-songs",
           icon: () => (

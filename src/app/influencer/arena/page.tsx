@@ -85,32 +85,44 @@ export default function ArenaPage() {
                             <Link
                                 href={`/influencer/arena/${arena.id}`}
                                 key={arena.id}
-                                className="p-6 rounded-3xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all group flex flex-col h-full"
+                                className="rounded-3xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all group flex flex-col h-full overflow-hidden"
                             >
-                                <div className="flex items-start gap-4 mb-4">
-                                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
-                                        {arena.brandLogo ? (
-                                            <Image src={arena.brandLogo} alt="Logo" width={48} height={48} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-xl">
-                                                {arena.brandName.charAt(0)}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-bold text-primary truncate">{arena.brandName}</p>
-                                        <h3 className="font-bold text-lg text-slate-900 dark:text-white truncate group-hover:text-primary transition-colors">{arena.title}</h3>
-                                    </div>
+                                <div className="h-32 w-full relative bg-slate-100 dark:bg-slate-800 shrink-0">
+                                    {arena.bannerUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={arena.bannerUrl} alt={arena.title} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full bg-gradient-to-br from-[#3F030B] to-[#7E1523]" />
+                                    )}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                                 </div>
 
-                                <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                        <Target className="w-4 h-4" />
-                                        Cap: {arena.maxReachCap ? (arena.maxReachCap / 1000).toFixed(0) + 'k' : 'Uncapped'}
+                                <div className="p-6 flex flex-col flex-1">
+                                    <div className="flex items-start gap-4 mb-4">
+                                        <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
+                                            {arena.brandLogo ? (
+                                                <Image src={arena.brandLogo} alt="Logo" width={48} height={48} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-xl">
+                                                    {arena.brandName.charAt(0)}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-bold text-primary truncate">{arena.brandName}</p>
+                                            <h3 className="font-bold text-lg text-slate-900 dark:text-white truncate group-hover:text-primary transition-colors">{arena.title}</h3>
+                                        </div>
                                     </div>
-                                    <span className="text-sm font-bold text-primary flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                                        View <ArrowRight className="w-4 h-4" />
-                                    </span>
+
+                                    <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                            <Target className="w-4 h-4" />
+                                            Cap: {arena.maxReachCap ? (arena.maxReachCap / 1000).toFixed(0) + 'k' : 'Uncapped'}
+                                        </div>
+                                        <span className="text-sm font-bold text-primary flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                            View <ArrowRight className="w-4 h-4" />
+                                        </span>
+                                    </div>
                                 </div>
                             </Link>
                         ))}
