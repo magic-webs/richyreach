@@ -248,7 +248,7 @@ export function HeroSection({ isDark }: { isDark: boolean }) {
                   }}
                 >
                   <Image
-                    src={"/logo/magicwebs-logo.png"}
+                    src={"/logo/richyreach-logo.png"}
                     width={100}
                     height={100}
                     alt="Logo"
@@ -257,9 +257,9 @@ export function HeroSection({ isDark }: { isDark: boolean }) {
                 </div>
                 <div>
                   <div className="font-bold text-sm flex items-center gap-1">
-                    Magic Webs <span className="text-sky-400"><Verified size={16} /></span>
+                    Richy Reach <span className="text-sky-400"><Verified size={16} /></span>
                   </div>
-                  <div className="text-[11px] text-white/70">@magicwebs • Marketing Agency</div>
+                  <div className="text-[11px] text-white/70">@richyreach • Brand Platform</div>
                 </div>
               </div>
 

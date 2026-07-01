@@ -392,8 +392,10 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
         <div className="fixed md:hidden bottom-4 left-4 right-4 z-50">
           <nav className="flex items-center justify-around h-16 px-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/40 dark:border-white/10 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.12)] relative">
             {(() => {
-              const filteredItems = currentNavItems.filter(item => !['Wallet', 'Messaging', 'Earnings'].includes(item.name));
-              const activeIndex = filteredItems.findIndex(item => pathname === item.href || pathname.startsWith(item.href + '/'));
+              const filteredItems = user.role === "admin"
+                ? currentNavItems.filter(item => ["Dashboard", "Profiles", "Messaging"].includes(item.name))
+                : currentNavItems.filter(item => !["Wallet", "Messaging", "Earnings"].includes(item.name));
+              const activeIndex = filteredItems.findIndex(item => pathname === item.href || pathname.startsWith(item.href + "/"));
 
               return (
                 <>

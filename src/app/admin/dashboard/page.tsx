@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api-client";
+import { Image as ImageIcon, Music, Megaphone, Calculator, MessageSquare, Layers } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
@@ -117,6 +118,83 @@ export default function AdminDashboardPage() {
                 <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
               </div>
             </Link>
+          </div>
+
+          {/* Administration Console */}
+          <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:shadow-none relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-primary/5 to-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
+            <div>
+              <h2 className="text-sm font-semibold text-primary uppercase tracking-wider">Administration Console</h2>
+              <p className="text-xs text-slate-500 mt-1">Manage platform content and assets</p>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-6">
+              {/* Campaign Images */}
+              <Link href="/admin/campaign-images" className="group flex flex-col justify-between p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-900 hover:border-primary/50 dark:hover:border-primary/50 transition-all hover:scale-[1.03] shadow-sm">
+                <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-500 w-fit group-hover:scale-110 transition-transform">
+                  <ImageIcon size={20} />
+                </div>
+                <div className="mt-4">
+                  <h3 className="font-bold text-xs text-slate-900 dark:text-white">Campaigns</h3>
+                  <p className="text-[10px] text-slate-400 mt-1">Verify gallery images</p>
+                </div>
+              </Link>
+
+              {/* Arena Banners */}
+              <Link href="/admin/arena-images" className="group flex flex-col justify-between p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-900 hover:border-primary/50 dark:hover:border-primary/50 transition-all hover:scale-[1.03] shadow-sm">
+                <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-500 w-fit group-hover:scale-110 transition-transform">
+                  <Layers size={20} />
+                </div>
+                <div className="mt-4">
+                  <h3 className="font-bold text-xs text-slate-900 dark:text-white">Arena Banners</h3>
+                  <p className="text-[10px] text-slate-400 mt-1">Configure slides</p>
+                </div>
+              </Link>
+
+              {/* Trending Songs */}
+              <Link href="/admin/trending-songs" className="group flex flex-col justify-between p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-900 hover:border-primary/50 dark:hover:border-primary/50 transition-all hover:scale-[1.03] shadow-sm">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 w-fit group-hover:scale-110 transition-transform">
+                  <Music size={20} />
+                </div>
+                <div className="mt-4">
+                  <h3 className="font-bold text-xs text-slate-900 dark:text-white">Trending Songs</h3>
+                  <p className="text-[10px] text-slate-400 mt-1">Curate popular audio</p>
+                </div>
+              </Link>
+
+              {/* Promo Banners */}
+              <Link href="/admin/banners" className="group flex flex-col justify-between p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-900 hover:border-primary/50 dark:hover:border-primary/50 transition-all hover:scale-[1.03] shadow-sm">
+                <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500 w-fit group-hover:scale-110 transition-transform">
+                  <Megaphone size={20} />
+                </div>
+                <div className="mt-4">
+                  <h3 className="font-bold text-xs text-slate-900 dark:text-white">Promo Banners</h3>
+                  <p className="text-[10px] text-slate-400 mt-1">Manage marketing sliders</p>
+                </div>
+              </Link>
+
+              {/* Calculators */}
+              <Link href="/calculators" className="group flex flex-col justify-between p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-900 hover:border-primary/50 dark:hover:border-primary/50 transition-all hover:scale-[1.03] shadow-sm">
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 w-fit group-hover:scale-110 transition-transform">
+                  <Calculator size={20} />
+                </div>
+                <div className="mt-4">
+                  <h3 className="font-bold text-xs text-slate-900 dark:text-white">Calculators</h3>
+                  <p className="text-[10px] text-slate-400 mt-1">ROI & pricing metrics</p>
+                </div>
+              </Link>
+
+              {/* Messaging */}
+              <Link href="/admin/chat" className="group flex flex-col justify-between p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-900 hover:border-primary/50 dark:hover:border-primary/50 transition-all hover:scale-[1.03] shadow-sm">
+                <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-500 w-fit group-hover:scale-110 transition-transform">
+                  <MessageSquare size={20} />
+                </div>
+                <div className="mt-4">
+                  <h3 className="font-bold text-xs text-slate-900 dark:text-white">Messaging</h3>
+                  <p className="text-[10px] text-slate-400 mt-1">Platform active chats</p>
+                </div>
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
