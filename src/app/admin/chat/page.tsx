@@ -15,6 +15,25 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
+import { Mic, Square, Trash2 } from "lucide-react";
+
+async function uploadAudioMessage(blob: Blob): Promise<{ url: string; key: string }> {
+  const ext = blob.type.split("/")[1]?.split(";")[0] || "webm";
+  const formData = new FormData();
+  formData.append("file", blob, `voice-note-${Date.now()}.${ext}`);
+  const res = await api("/media/upload", { method: "POST", body: formData });
+  const result = await res.json();
+  if (!res.ok || !result.success) throw new Error(result.error || "Failed to upload voice note");
+  return result.data;
+}
+
+function formatDuration(totalSeconds: number) {
+  const safe = Number.isFinite(totalSeconds) && totalSeconds > 0 ? totalSeconds : 0;
+  const m = Math.floor(safe / 60);
+  const s = Math.floor(safe % 60);
+  return `${m}:${s < 10 ? "0" : ""}${s}`;
+}
 
 export default function AdminChatPage() {
   const { user } = useAuth();
@@ -34,6 +53,9 @@ export default function AdminChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+
+  const recorder = useAudioRecorder();
+  const [sendingVoice, setSendingVoice] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -228,6 +250,34 @@ export default function AdminChatPage() {
     }
   };
 
+  const handleSendVoiceNote = async () => {
+    if (!recorder.audioBlob || !selectedRoom || sendingVoice) return;
+    setSendingVoice(true);
+    try {
+      const { url } = await uploadAudioMessage(recorder.audioBlob);
+      const attachmentDurationSec = Math.round(recorder.durationSec);
+      const payload = { attachmentUrl: url, attachmentType: "audio" as const, attachmentDurationSec };
+
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ ...payload, senderId: user.id }));
+      } else {
+        const res = await api(`/chat/message/${selectedRoom.roomId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const result = await res.json();
+          if (result.success) await fetchMessages(selectedRoom.roomId, true);
+        }
+      }
+      recorder.discardRecording();
+    } catch (err) {
+      console.error("Failed to send voice note", err);
+    } finally {
+      setSendingVoice(false);
+    }
+  };
 
   if (user?.role !== "admin") return null;
 
@@ -375,7 +425,11 @@ export default function AdminChatPage() {
                             : "bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 text-slate-850 dark:text-slate-300 rounded-bl-none"
                             }`}
                         >
-                          {msg.content}
+                          {msg.attachmentType === "audio" && msg.attachmentUrl ? (
+                            <audio controls src={msg.attachmentUrl} className="h-9 max-w-[220px] align-middle" />
+                          ) : (
+                            msg.content
+                          )}
                         </div>
                         <p className={`text-[8px] text-slate-500 font-semibold mt-1 ${isMe ? "text-right" : ""}`}>
                           {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -389,10 +443,44 @@ export default function AdminChatPage() {
             </div>
 
             {/* Message Input Panel */}
+            {recorder.phase === "recording" ? (
+              <div className="p-4 border-t border-slate-150 dark:border-slate-800/60 bg-slate-100/50 dark:bg-slate-950/20 backdrop-blur-md flex gap-3.5 items-center z-10">
+                <div className="flex-1 h-11 rounded-xl bg-white dark:bg-slate-955 border border-slate-250 dark:border-slate-850 flex items-center gap-2 px-4">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/75 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+                  </span>
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{formatDuration(recorder.durationSec)}</span>
+                </div>
+                <GlassButton type="button" variant="outline" onClick={recorder.cancelRecording} className="h-11 w-11 p-0 rounded-xl shrink-0">
+                  <Trash2 className="w-4 h-4" />
+                </GlassButton>
+                <GlassButton type="button" variant="primary" onClick={() => recorder.stopRecording()} className="h-11 w-11 p-0 rounded-xl shrink-0">
+                  <Square className="w-4 h-4" />
+                </GlassButton>
+              </div>
+            ) : recorder.phase === "stopped" && recorder.audioUrl ? (
+              <div className="p-4 border-t border-slate-150 dark:border-slate-800/60 bg-slate-100/50 dark:bg-slate-950/20 backdrop-blur-md flex gap-3.5 items-center z-10">
+                <div className="flex-1 h-11 rounded-xl bg-white dark:bg-slate-955 border border-slate-250 dark:border-slate-850 flex items-center px-2">
+                  <audio controls src={recorder.audioUrl} className="h-8 w-full" />
+                </div>
+                <GlassButton type="button" variant="outline" onClick={recorder.discardRecording} disabled={sendingVoice} className="h-11 w-11 p-0 rounded-xl shrink-0">
+                  <Trash2 className="w-4 h-4" />
+                </GlassButton>
+                <GlassButton type="button" variant="primary" onClick={handleSendVoiceNote} disabled={sendingVoice} className="h-11 w-11 p-0 rounded-xl shrink-0">
+                  <svg className="w-5 h-5 transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                </GlassButton>
+              </div>
+            ) : (
             <form
               onSubmit={handleSendMessage}
               className="p-4 border-t border-slate-150 dark:border-slate-800/60 bg-slate-100/50 dark:bg-slate-950/20 backdrop-blur-md flex gap-3.5 items-center z-10"
             >
+              {recorder.permissionDenied && (
+                <p className="text-[10px] text-slate-500 absolute -top-6 left-4">Microphone access is needed to record voice notes.</p>
+              )}
               <Input
                 type="text"
                 placeholder="Type a message to the user..."
@@ -401,6 +489,15 @@ export default function AdminChatPage() {
                 disabled={sending}
                 className="flex-1 bg-white dark:bg-slate-955 border-slate-250 dark:border-slate-850 text-slate-900 dark:text-white rounded-xl h-11 text-xs focus:border-primary focus:ring-1 focus:ring-primary/20"
               />
+              <GlassButton
+                type="button"
+                variant="outline"
+                onClick={recorder.startRecording}
+                className="h-11 w-11 p-0 rounded-xl shrink-0"
+                title="Record a voice note"
+              >
+                <Mic className="w-4 h-4" />
+              </GlassButton>
               <GlassButton
                 type="submit"
                 disabled={sending || !newMessage.trim()}
@@ -412,6 +509,7 @@ export default function AdminChatPage() {
                 </svg>
               </GlassButton>
             </form>
+            )}
           </>
         )}
       </div>
