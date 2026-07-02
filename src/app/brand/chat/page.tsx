@@ -81,41 +81,63 @@ export default function ChatPage() {
   useEffect(() => {
     if (!selectedRoom) return;
 
-    const wsUrl = `ws://localhost:4000?roomId=${selectedRoom.roomId}`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    let isMounted = true;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+    let ws: WebSocket | null = null;
 
-    ws.onopen = () => {
-      console.log("Connected to WS room", selectedRoom.roomId);
-    };
+    const connect = () => {
+      const token = typeof window !== "undefined" ? localStorage.getItem("reelio_session_token") || "" : "";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://backend-api.richyreach.com/api";
+      const wsBase = apiUrl.replace(/^http/, "ws");
+      const wsUrl = `${wsBase}/chat/ws/${selectedRoom.roomId}?token=${encodeURIComponent(token)}`;
 
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "pong") return;
-        if (data.error) {
-          console.error("WS Error:", data.error);
-          return;
+      ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log("Connected to WS room", selectedRoom.roomId);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "pong") return;
+          if (data.error) {
+            console.error("WS Error:", data.error);
+            return;
+          }
+          
+          if (data.type === "message" && data.message) {
+            // Append new message to state
+            setMessages((prev) => {
+              // Prevent duplicates
+              if (prev.some((m) => m.id === data.message.id)) return prev;
+              return [...prev, data.message];
+            });
+          }
+        } catch (err) {
+          console.error("Failed to parse WS message", err);
         }
-        
-        // Append new message to state
-        setMessages((prev) => {
-          // Prevent duplicates
-          if (prev.some((m) => m.id === data.id)) return prev;
-          return [...prev, data];
-        });
-      } catch (err) {
-        console.error("Failed to parse WS message", err);
-      }
+      };
+
+      ws.onclose = (e) => {
+        console.log("WS connection closed");
+        wsRef.current = null;
+        if (isMounted && e.code !== 1000) {
+          reconnectTimeout = setTimeout(() => {
+            if (isMounted) connect();
+          }, 3000);
+        }
+      };
     };
 
-    ws.onclose = () => {
-      console.log("WS connection closed");
-    };
+    connect();
 
     return () => {
-      ws.close();
+      isMounted = false;
+      if (ws) ws.close();
       wsRef.current = null;
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
     };
   }, [selectedRoom?.roomId]);
 
