@@ -57,13 +57,59 @@ export default function AdminChatPage() {
   const recorder = useAudioRecorder();
   const [sendingVoice, setSendingVoice] = useState(false);
 
+  // Pagination states
+  const [hasMoreOlder, setHasMoreOlder] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+
+  // Typing states
+  const [partnerIsTyping, setPartnerIsTyping] = useState(false);
+  const [localIsTyping, setLocalIsTyping] = useState(false);
+  const localTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const partnerTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Clean up timeouts on unmount
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    return () => {
+      if (localTypingTimeoutRef.current) clearTimeout(localTypingTimeoutRef.current);
+      if (partnerTypingTimeoutRef.current) clearTimeout(partnerTypingTimeoutRef.current);
+    };
+  }, []);
+
+  const lastMessageIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const lastMsg = messages[messages.length - 1];
+
+    // Check if it's a new message (append)
+    const isNewMessage = lastMessageIdRef.current !== null && lastMessageIdRef.current !== lastMsg.id;
+    lastMessageIdRef.current = lastMsg.id;
+
+    if (!isNewMessage) {
+      // First load or pagination prepends
+      if (nextCursor === null) {
+        scrollToBottom();
+      }
+      return;
+    }
+
+    // Scroll to bottom if user is already near the bottom or if it is sent by me
+    const container = messagesContainerRef.current;
+    if (container) {
+      const isMe = lastMsg.senderId === user?.id || lastMsg.senderName === user?.name;
+      const isNearBottom = container.scrollHeight - container.clientHeight - container.scrollTop < 120;
+      if (isMe || isNearBottom) {
+        scrollToBottom();
+      }
+    }
+  }, [messages, user, nextCursor]);
 
   const fetchRooms = async () => {
     try {
@@ -85,17 +131,68 @@ export default function AdminChatPage() {
   const fetchMessages = async (roomId: string, quiet = false) => {
     try {
       if (!quiet) setLoadingMessages(true);
+      // Reset pagination meta on channel swap
+      setNextCursor(null);
+      setHasMoreOlder(false);
+      lastMessageIdRef.current = null;
+
       const res = await api(`/chat/messages/${roomId}`);
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.data) {
           setMessages(result.data);
+          if (result.meta?.pagination) {
+            setHasMoreOlder(result.meta.pagination.hasMore);
+            setNextCursor(result.meta.pagination.nextCursor);
+          }
         }
       }
     } catch (err) {
       console.error("Failed to load messages", err);
     } finally {
       if (!quiet) setLoadingMessages(false);
+    }
+  };
+
+  const loadOlderMessages = async () => {
+    if (!selectedRoom || !hasMoreOlder || loadingOlder || !nextCursor) return;
+    try {
+      setLoadingOlder(true);
+      const container = messagesContainerRef.current;
+      const prevScrollHeight = container ? container.scrollHeight : 0;
+
+      const res = await api(`/chat/messages/${selectedRoom.roomId}?cursor=${encodeURIComponent(nextCursor)}`);
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success && result.data) {
+          setMessages((prev) => [...result.data, ...prev]);
+          if (result.meta?.pagination) {
+            setHasMoreOlder(result.meta.pagination.hasMore);
+            setNextCursor(result.meta.pagination.nextCursor);
+          } else {
+            setHasMoreOlder(false);
+            setNextCursor(null);
+          }
+
+          // Adjust scroll position to prevent jumping
+          setTimeout(() => {
+            if (container) {
+              container.scrollTop = container.scrollHeight - prevScrollHeight;
+            }
+          }, 0);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load older messages", err);
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollTop === 0 && hasMoreOlder && !loadingOlder) {
+      loadOlderMessages();
     }
   };
 
@@ -147,6 +244,7 @@ export default function AdminChatPage() {
 
       ws.onopen = () => {
         console.log("Connected to WS room", selectedRoom.roomId);
+        setPartnerIsTyping(false);
       };
 
       ws.onmessage = (event) => {
@@ -165,6 +263,19 @@ export default function AdminChatPage() {
               if (prev.some((m) => m.id === data.message.id)) return prev;
               return [...prev, data.message];
             });
+          } else if (data.type === "typing") {
+            if (data.userId !== user?.id) {
+              setPartnerIsTyping(data.isTyping);
+              if (partnerTypingTimeoutRef.current) clearTimeout(partnerTypingTimeoutRef.current);
+              if (data.isTyping) {
+                partnerTypingTimeoutRef.current = setTimeout(() => {
+                  setPartnerIsTyping(false);
+                }, 5000); // 5s safety timeout
+              }
+            }
+          } else if (data.type === "read-receipt") {
+            const idSet = new Set(data.messageIds);
+            setMessages((prev) => prev.map((m) => idSet.has(m.id) ? { ...m, readAt: data.readAt } : m));
           }
         } catch (err) {
           console.error("Failed to parse WS message", err);
@@ -218,12 +329,49 @@ export default function AdminChatPage() {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+    if (!selectedRoom) return;
+
+    if (!localIsTyping && e.target.value.trim().length > 0) {
+      setLocalIsTyping(true);
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "typing", isTyping: true }));
+      }
+    } else if (e.target.value.trim().length === 0) {
+      setLocalIsTyping(false);
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "typing", isTyping: false }));
+      }
+      if (localTypingTimeoutRef.current) clearTimeout(localTypingTimeoutRef.current);
+      return;
+    }
+
+    if (localTypingTimeoutRef.current) {
+      clearTimeout(localTypingTimeoutRef.current);
+    }
+
+    localTypingTimeoutRef.current = setTimeout(() => {
+      setLocalIsTyping(false);
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "typing", isTyping: false }));
+      }
+    }, 2000);
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedRoom) return;
 
+    // Reset local typing indicator on send
+    if (localTypingTimeoutRef.current) {
+      clearTimeout(localTypingTimeoutRef.current);
+    }
+    setLocalIsTyping(false);
+
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      // Send via true WebSocket
+      // Send typing: false and then the message
+      wsRef.current.send(JSON.stringify({ type: "typing", isTyping: false }));
       wsRef.current.send(JSON.stringify({ content: newMessage.trim(), senderId: user.id }));
       setNewMessage("");
     } else {
@@ -391,7 +539,18 @@ export default function AdminChatPage() {
             </div>
 
             {/* Bubble Thread */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 z-10">
+            <div 
+              ref={messagesContainerRef}
+              onScroll={handleScroll}
+              className="flex-1 overflow-y-auto p-5 space-y-4 z-10"
+            >
+              {loadingOlder && (
+                <div className="flex items-center justify-center py-2">
+                  <span className="relative flex h-5 w-5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/75 opacity-75"></span>
+                  </span>
+                </div>
+              )}
               {loadingMessages && messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <span className="relative flex h-6 w-6">
@@ -405,6 +564,8 @@ export default function AdminChatPage() {
               ) : (
                 messages.map((msg) => {
                   const isMe = msg.senderId === user.id || msg.senderId.startsWith(`mock_${user.role}`) || msg.senderName === user.name;
+                  const lastMeMsgIndex = [...messages].reverse().findIndex(m => m.senderId === user?.id || m.senderName === user?.name);
+                  const isLastMeMsg = lastMeMsgIndex !== -1 && messages[messages.length - 1 - lastMeMsgIndex].id === msg.id;
 
                   return (
                     <div
@@ -434,10 +595,29 @@ export default function AdminChatPage() {
                         <p className={`text-[8px] text-slate-500 font-semibold mt-1 ${isMe ? "text-right" : ""}`}>
                           {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
+                        {isMe && isLastMeMsg && msg.readAt && (
+                          <p className="text-[9px] text-slate-400 dark:text-slate-500 font-semibold mt-1 text-right">
+                            Seen {new Date(msg.readAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
                 })
+              )}
+              {partnerIsTyping && (
+                <div className="flex gap-3 max-w-[80%] mr-auto items-end">
+                  <img
+                    src={selectedRoom.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${selectedRoom.name}`}
+                    alt="Partner typing avatar"
+                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 shrink-0 self-end mb-1 object-contain"
+                  />
+                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-2xl rounded-bl-none w-[60px]">
+                    <span className="w-1.5 h-1.5 bg-slate-450 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                    <span className="w-1.5 h-1.5 bg-slate-455 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                    <span className="w-1.5 h-1.5 bg-slate-455 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                  </div>
+                </div>
               )}
               <div ref={messagesEndRef} />
             </div>
@@ -485,7 +665,7 @@ export default function AdminChatPage() {
                 type="text"
                 placeholder="Type a message to the user..."
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={handleInputChange}
                 disabled={sending}
                 className="flex-1 bg-white dark:bg-slate-955 border-slate-250 dark:border-slate-850 text-slate-900 dark:text-white rounded-xl h-11 text-xs focus:border-primary focus:ring-1 focus:ring-primary/20"
               />
