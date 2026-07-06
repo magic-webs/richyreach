@@ -1,15 +1,58 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "../../layout-shell";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api-client";
-import { Image as ImageIcon, Music, Megaphone, Calculator, MessageSquare, Layers } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Image as ImageIcon, Music, Megaphone, Calculator, MessageSquare, Layers, Send, Bell } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
+
+  const [quickTitle, setQuickTitle] = useState("");
+  const [quickBody, setQuickBody] = useState("");
+
+  const quickSendMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api("/admin/notifications/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: quickTitle.trim(),
+          body: quickBody.trim(),
+          target: { mode: "all" },
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !(json as any).success) {
+        throw new Error((json as any).error || "Failed to send notification");
+      }
+      return json;
+    },
+    onSuccess: () => {
+      toast.success("Broadcast queued for all users");
+      setQuickTitle("");
+      setQuickBody("");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to send notification");
+    },
+  });
+
+  const handleQuickSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickTitle.trim() || !quickBody.trim()) {
+      toast.error("Title and body are required");
+      return;
+    }
+    quickSendMutation.mutate();
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["adminDashboardData"],
@@ -118,6 +161,46 @@ export default function AdminDashboardPage() {
                 <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
               </div>
             </Link>
+          </div>
+
+          {/* Quick Send Notification */}
+          <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:shadow-none relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                  <Bell size={16} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-primary uppercase tracking-wider">Send Notification</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Quickly broadcast a push notification to all users</p>
+                </div>
+              </div>
+              <Link href="/admin/notifications" className="text-xs font-bold text-primary hover:underline whitespace-nowrap shrink-0">
+                Advanced options
+              </Link>
+            </div>
+
+            <form onSubmit={handleQuickSend} className="mt-4 space-y-3">
+              <Input
+                value={quickTitle}
+                onChange={(e) => setQuickTitle(e.target.value)}
+                placeholder="Notification title"
+                maxLength={80}
+              />
+              <Textarea
+                value={quickBody}
+                onChange={(e) => setQuickBody(e.target.value)}
+                placeholder="Write your message..."
+                maxLength={200}
+                rows={2}
+              />
+              <div className="flex justify-end">
+                <Button type="submit" size="sm" disabled={quickSendMutation.isPending} className="gap-2">
+                  <Send size={14} />
+                  {quickSendMutation.isPending ? "Sending..." : "Send to all users"}
+                </Button>
+              </div>
+            </form>
           </div>
 
           {/* Administration Console */}
