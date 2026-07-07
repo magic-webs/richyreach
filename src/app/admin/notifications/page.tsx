@@ -21,6 +21,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageUploadField } from "../campaign-images/_components/ImageUploadField";
 
 interface AdminUser {
@@ -30,6 +31,26 @@ interface AdminUser {
   role: "influencer" | "brand" | "admin";
 }
 
+type TargetMode = "all" | "brands" | "influencers" | "users";
+
+const NOTIFICATION_TYPES = [
+  { value: "offer", label: "Offer / Promotion" },
+  { value: "system", label: "System Announcement" },
+  { value: "campaign", label: "Campaign" },
+  { value: "chat", label: "Chat" },
+  { value: "order", label: "Order" },
+  { value: "referral", label: "Referral" },
+  { value: "wallet", label: "Wallet" },
+  { value: "profile", label: "Profile" },
+] as const;
+
+const TARGET_OPTIONS: { value: TargetMode; label: string }[] = [
+  { value: "all", label: "All users" },
+  { value: "brands", label: "All brands" },
+  { value: "influencers", label: "All influencers" },
+  { value: "users", label: "Specific users" },
+];
+
 export default function AdminNotificationsPage() {
   const { user } = useAuth();
 
@@ -38,7 +59,8 @@ export default function AdminNotificationsPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [deepLink, setDeepLink] = useState("");
-  const [targetMode, setTargetMode] = useState<"all" | "users">("all");
+  const [notificationType, setNotificationType] = useState<(typeof NOTIFICATION_TYPES)[number]["value"]>("offer");
+  const [targetMode, setTargetMode] = useState<TargetMode>("all");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [userSearch, setUserSearch] = useState("");
 
@@ -48,6 +70,7 @@ export default function AdminNotificationsPage() {
     setImageUrl("");
     setImageFile(null);
     setDeepLink("");
+    setNotificationType("offer");
     setTargetMode("all");
     setSelectedUserIds([]);
     setUserSearch("");
@@ -97,14 +120,15 @@ export default function AdminNotificationsPage() {
   const sendMutation = useMutation({
     mutationFn: async () => {
       const payload = {
-        title: title.trim(),
-        body: body.trim(),
+        title: title.trim() || undefined,
+        body: body.trim() || undefined,
         imageUrl: imageUrl.trim() || undefined,
         deepLink: deepLink.trim() || undefined,
+        type: notificationType,
         target:
-          targetMode === "all"
-            ? { mode: "all" as const }
-            : { mode: "users" as const, userIds: selectedUserIds },
+          targetMode === "users"
+            ? { mode: "users" as const, userIds: selectedUserIds }
+            : { mode: targetMode },
       };
       const res = await api("/admin/notifications/broadcast", {
         method: "POST",
@@ -118,11 +142,15 @@ export default function AdminNotificationsPage() {
       return json as any;
     },
     onSuccess: () => {
-      toast.success(
+      const label =
         targetMode === "all"
-          ? "Broadcast queued for all users"
-          : `Notification queued for ${selectedUserIds.length} user${selectedUserIds.length === 1 ? "" : "s"}`
-      );
+          ? "all users"
+          : targetMode === "brands"
+          ? "all brands"
+          : targetMode === "influencers"
+          ? "all influencers"
+          : `${selectedUserIds.length} user${selectedUserIds.length === 1 ? "" : "s"}`;
+      toast.success(`Broadcast queued for ${label}`);
       resetForm();
     },
     onError: (err: any) => {
@@ -132,8 +160,8 @@ export default function AdminNotificationsPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !body.trim()) {
-      toast.error("Title and body are required");
+    if (!title.trim() && !body.trim() && !imageUrl.trim()) {
+      toast.error("Provide at least a title, body, or image");
       return;
     }
     if (targetMode === "users" && selectedUserIds.length === 0) {
@@ -168,7 +196,7 @@ export default function AdminNotificationsPage() {
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="notif-title">Title</Label>
+              <Label htmlFor="notif-title">Title (optional if an image is attached)</Label>
               <Input
                 id="notif-title"
                 value={title}
@@ -179,7 +207,7 @@ export default function AdminNotificationsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notif-body">Body</Label>
+              <Label htmlFor="notif-body">Body (optional if an image is attached)</Label>
               <Textarea
                 id="notif-body"
                 value={body}
@@ -188,6 +216,22 @@ export default function AdminNotificationsPage() {
                 maxLength={200}
                 rows={3}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notification type</Label>
+              <Select value={notificationType} onValueChange={(val) => val && setNotificationType(val as typeof notificationType)}>
+                <SelectTrigger className="w-full h-9 text-sm">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {NOTIFICATION_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -225,17 +269,18 @@ export default function AdminNotificationsPage() {
               <Label>Send to</Label>
               <RadioGroup
                 value={targetMode}
-                onValueChange={(val) => setTargetMode(val as "all" | "users")}
+                onValueChange={(val) => val && setTargetMode(val as TargetMode)}
                 className="grid grid-cols-1 sm:grid-cols-2 gap-3"
               >
-                <label className="flex items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-800/60 cursor-pointer hover:border-primary/50 transition-colors">
-                  <RadioGroupItem value="all" />
-                  <span className="text-sm font-medium">All users</span>
-                </label>
-                <label className="flex items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-800/60 cursor-pointer hover:border-primary/50 transition-colors">
-                  <RadioGroupItem value="users" />
-                  <span className="text-sm font-medium">Specific users</span>
-                </label>
+                {TARGET_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className="flex items-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-800/60 cursor-pointer hover:border-primary/50 transition-colors"
+                  >
+                    <RadioGroupItem value={opt.value} />
+                    <span className="text-sm font-medium">{opt.label}</span>
+                  </label>
+                ))}
               </RadioGroup>
 
               {targetMode === "users" && (
