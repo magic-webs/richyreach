@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useAuth } from "../../layout-shell";
 import Link from "next/link";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -17,6 +17,23 @@ export default function AdminDashboardPage() {
 
   const [quickTitle, setQuickTitle] = useState("");
   const [quickBody, setQuickBody] = useState("");
+  const [quickImageUrl, setQuickImageUrl] = useState("");
+  const quickImageInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await api("/media/upload", { method: "POST", body: formData });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !(json as any).success) {
+        throw new Error((json as any).error || "Failed to upload image");
+      }
+      return (json as any).data.url as string;
+    },
+    onSuccess: (url) => setQuickImageUrl(url),
+    onError: (err: any) => toast.error(err.message || "Failed to upload image"),
+  });
 
   const quickSendMutation = useMutation({
     mutationFn: async () => {
@@ -26,6 +43,7 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({
           title: quickTitle.trim(),
           body: quickBody.trim(),
+          imageUrl: quickImageUrl || undefined,
           target: { mode: "all" },
         }),
       });
@@ -39,6 +57,7 @@ export default function AdminDashboardPage() {
       toast.success("Broadcast queued for all users");
       setQuickTitle("");
       setQuickBody("");
+      setQuickImageUrl("");
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to send notification");
@@ -194,8 +213,34 @@ export default function AdminDashboardPage() {
                 maxLength={200}
                 rows={2}
               />
-              <div className="flex justify-end">
-                <Button type="submit" size="sm" disabled={quickSendMutation.isPending} className="gap-2">
+              <input
+                ref={quickImageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadImageMutation.mutate(file);
+                }}
+              />
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    disabled={uploadImageMutation.isPending}
+                    onClick={() => quickImageInputRef.current?.click()}
+                  >
+                    <ImageIcon size={14} />
+                    {uploadImageMutation.isPending ? "Uploading..." : quickImageUrl ? "Change image" : "Add image"}
+                  </Button>
+                  {quickImageUrl && (
+                    <img src={quickImageUrl} alt="" className="h-8 w-8 rounded-lg object-cover border border-slate-200 dark:border-slate-800/60" />
+                  )}
+                </div>
+                <Button type="submit" size="sm" disabled={quickSendMutation.isPending || uploadImageMutation.isPending} className="gap-2">
                   <Send size={14} />
                   {quickSendMutation.isPending ? "Sending..." : "Send to all users"}
                 </Button>

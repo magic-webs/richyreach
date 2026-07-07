@@ -21,6 +21,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import { ImageUploadField } from "../campaign-images/_components/ImageUploadField";
 
 interface AdminUser {
   id: string;
@@ -35,6 +36,7 @@ export default function AdminNotificationsPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [deepLink, setDeepLink] = useState("");
   const [targetMode, setTargetMode] = useState<"all" | "users">("all");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -44,11 +46,30 @@ export default function AdminNotificationsPage() {
     setTitle("");
     setBody("");
     setImageUrl("");
+    setImageFile(null);
     setDeepLink("");
     setTargetMode("all");
     setSelectedUserIds([]);
     setUserSearch("");
   };
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await api("/media/upload", { method: "POST", body: formData });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !(json as any).success) {
+        throw new Error((json as any).error || "Failed to upload image");
+      }
+      return (json as any).data.url as string;
+    },
+    onSuccess: (url) => setImageUrl(url),
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to upload image");
+      setImageFile(null);
+    },
+  });
 
   const { data: users = [], isLoading: usersLoading } = useQuery<AdminUser[]>({
     queryKey: ["adminUsersForNotifications"],
@@ -169,25 +190,35 @@ export default function AdminNotificationsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="notif-image">Image URL (optional)</Label>
-                <Input
-                  id="notif-image"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="notif-link">Deep link (optional)</Label>
-                <Input
-                  id="notif-link"
-                  value={deepLink}
-                  onChange={(e) => setDeepLink(e.target.value)}
-                  placeholder="/collab/abc123"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label>Image (optional)</Label>
+              <ImageUploadField
+                file={imageFile}
+                url={imageUrl}
+                onFileChange={(file) => {
+                  setImageFile(file);
+                  if (file) uploadImageMutation.mutate(file);
+                }}
+                onUrlChange={setImageUrl}
+                fileLabel="Upload Image"
+                urlLabel="Or paste an Image URL"
+              />
+              {uploadImageMutation.isPending && (
+                <p className="text-xs text-slate-500">Uploading image...</p>
+              )}
+              {imageUrl && !uploadImageMutation.isPending && (
+                <img src={imageUrl} alt="Notification preview" className="mt-2 h-24 rounded-lg border border-slate-200 dark:border-slate-800/60 object-cover" />
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notif-link">Deep link (optional)</Label>
+              <Input
+                id="notif-link"
+                value={deepLink}
+                onChange={(e) => setDeepLink(e.target.value)}
+                placeholder="/collab/abc123"
+              />
             </div>
 
             <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800/60">
@@ -258,7 +289,7 @@ export default function AdminNotificationsPage() {
             </div>
           </CardContent>
           <CardFooter className="justify-end">
-            <Button type="submit" disabled={sendMutation.isPending} className="gap-2">
+            <Button type="submit" disabled={sendMutation.isPending || uploadImageMutation.isPending} className="gap-2">
               <Send size={16} />
               {sendMutation.isPending ? "Sending..." : "Send Notification"}
             </Button>
