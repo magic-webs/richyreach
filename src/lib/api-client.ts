@@ -12,7 +12,7 @@ export const api = async (path: string, options: RequestInit = {}) => {
 
   // Check if token exists in localStorage (only in client/browser environment)
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("reelio_session_token");
+    const token = localStorage.getItem("richyreach_session_token");
     if (token && !headers.has("Authorization")) {
       headers.set("Authorization", `Bearer ${token}`);
     }

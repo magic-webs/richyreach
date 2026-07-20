@@ -65,7 +65,7 @@ export function WalletDashboard() {
         key: order.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_mockkey", // Enter the Key ID generated from the Dashboard
         amount: order.amount,
         currency: order.currency,
-        name: "Reelio",
+        name: "RichyReach",
         description: "Add funds to Wallet",
         order_id: order.id,
         handler: async function (response: any) {
@@ -95,8 +95,8 @@ export function WalletDashboard() {
           }
         },
         prefill: {
-          name: "Reelio User",
-          email: "user@reelio.com",
+          name: "RichyReach User",
+          email: "user@richyreach.com",
         },
         theme: {
           color: "#4f46e5", // primary color

@@ -48,9 +48,9 @@ export const useAuthStore = create<AuthState>()(
         })),
       logout: () => {
         if (typeof window !== "undefined") {
-          localStorage.removeItem("reelio_session_token");
+          localStorage.removeItem("richyreach_session_token");
           // Clear the middleware-readable cookie too
-          document.cookie = "reelio_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+          document.cookie = "richyreach_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
         }
         set({ user: defaultSessionUser, notifications: [] });
       },

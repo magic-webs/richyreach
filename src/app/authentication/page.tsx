@@ -177,9 +177,12 @@ function AuthPageInner() {
       // Store token in localStorage for cross-origin API headers
       // AND set it as a cookie so the Next.js middleware (proxy.ts) can read it
       if (data.data?.token) {
-        localStorage.setItem("reelio_session_token", data.data.token);
-        // The middleware reads `reelio_session` cookie — keep them in sync
-        document.cookie = `reelio_session=${data.data.token}; path=/; SameSite=Lax`;
+        localStorage.setItem("richyreach_session_token", data.data.token);
+        // The middleware reads `richyreach_session` cookie — keep them in sync.
+        // Must match the backend session lifetime (30 days); without max-age this
+        // is a browser-session cookie that vanishes on restart while the
+        // localStorage token/persisted user survive, causing a redirect loop.
+        document.cookie = `richyreach_session=${data.data.token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
       }
       
       updateUser({

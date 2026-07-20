@@ -45,7 +45,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Read the custom session cookie set by our OTP auth
-  const sessionToken = request.cookies.get("reelio_session")?.value;
+  const sessionToken = request.cookies.get("richyreach_session")?.value;
 
   if (!sessionToken) {
     // Not authenticated — redirect to login
@@ -65,7 +65,7 @@ export async function proxy(request: NextRequest) {
       headers: {
         // Backend accepts Bearer token (same as the client-side api-client)
         Authorization: `Bearer ${sessionToken}`,
-        Cookie: `reelio_session=${sessionToken}`,
+        Cookie: `richyreach_session=${sessionToken}`,
       },
       cache: "no-store",
     });
@@ -76,7 +76,7 @@ export async function proxy(request: NextRequest) {
       loginUrl.searchParams.set("redirectTo", pathname);
       const res = NextResponse.redirect(loginUrl);
       // Clear stale cookie
-      res.cookies.delete("reelio_session");
+      res.cookies.delete("richyreach_session");
       return res;
     }
 

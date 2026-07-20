@@ -86,7 +86,7 @@ export default function ChatPage() {
     let ws: WebSocket | null = null;
 
     const connect = () => {
-      const token = typeof window !== "undefined" ? localStorage.getItem("reelio_session_token") || "" : "";
+      const token = typeof window !== "undefined" ? localStorage.getItem("richyreach_session_token") || "" : "";
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://backend-api.richyreach.com/api";
       const wsBase = apiUrl.replace(/^http/, "ws");
       const wsUrl = `${wsBase}/chat/ws/${selectedRoom.roomId}?token=${encodeURIComponent(token)}`;
